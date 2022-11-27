@@ -29,3 +29,5 @@ foreign import ccall "extism_input_load_u64" extismInputLoadU64 :: InputOffset -
 foreign import ccall "extism_config_get" extismGetConfig :: MemoryOffset -> IO MemoryOffset
 foreign import ccall "extism_var_get" extismGetVar :: MemoryOffset -> IO MemoryOffset
 foreign import ccall "extism_var_set" extismSetVar :: MemoryOffset -> MemoryOffset -> IO ()
+foreign import ccall "extism_http_request" extismHTTPRequest :: MemoryOffset -> MemoryOffset -> IO MemoryOffset
+foreign import ccall "extism_http_status_code" extismHTTPStatusCode :: IO Int32
