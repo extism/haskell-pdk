@@ -1,12 +1,12 @@
 module Extism.PDK where
 
 import Extism.PDK.Bindings
+import Extism.PDK.HTTP
 import Data.Word
 import Data.Int
 import Data.ByteString as B
 import Data.ByteString.Internal (c2w, w2c)
 import Data.ByteString.Unsafe (unsafeUseAsCString)
-
 
 data Memory = Memory MemoryOffset MemoryLength
 
@@ -41,12 +41,14 @@ load :: Memory -> IO ByteString
 load (Memory offs len) =
   let b = [0, 1 .. len] in
   do
+    -- TODO: use extismLoadU64 to reduce total number of loads
     bytes <- Prelude.mapM (\x -> extismLoadU8 (offs + x)) b
     return $ B.pack bytes
 
 store :: Memory -> ByteString -> IO ()
 store (Memory offs len) bs =
   let bytes = Prelude.zip [0..] (B.unpack bs) in
+  -- TODO: use extismStoreU64 to reduce total number of stores
   Prelude.mapM_ (\(index, x) -> extismStoreU8 (offs + index) x) bytes
 
 output :: ByteString -> IO ()
@@ -143,3 +145,55 @@ getConfig key = do
     s <- loadString mem
     free mem
     return (Just s)
+
+error :: String -> IO ()
+error msg = do
+  s <- allocString msg
+  extismSetError (memoryOffset s)
+  free s
+  
+data LogLevel = Info | Debug | Warn | Error
+
+log :: LogLevel -> String -> IO ()
+log Info msg = do
+  s <- allocString msg
+  extismLogInfo (memoryOffset s)
+  free s
+log Debug msg = do
+  s <- allocString msg
+  extismLogDebug (memoryOffset s)
+  free s
+log Warn msg = do
+  s <- allocString msg
+  extismLogWarn (memoryOffset s)
+  free s
+log Error msg = do
+  s <- allocString msg
+  extismLogError (memoryOffset s)
+  free s
+
+
+tryFree (Memory 0 0) = return ()
+tryFree x = free x
+
+httpRequest :: Request -> Maybe ByteString -> IO Response
+httpRequest req b = 
+  let json = toString req in
+  let bodyMem = case b of
+               Nothing -> return $ Memory 0 0
+               Just b -> allocByteString b
+  in
+  do
+    body <- bodyMem
+    j <- allocString json
+    res <- extismHTTPRequest (memoryOffset j) (memoryOffset body)
+    free j
+    tryFree body
+    code <- extismHTTPStatusCode
+    if res == 0 then 
+      return (Response (fromIntegral code) Nothing)
+    else do
+      mem <- findMemory res
+      bytes <- load mem
+      free mem
+      return (Response (fromIntegral code) (Just bytes))
