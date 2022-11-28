@@ -20,18 +20,18 @@ fromByteString bs = Prelude.map w2c $ B.unpack bs
 
 readInputByte i =
   extismInputLoadU8 i
-  
+
 readInputBytes len =
-  let b = [1, 2 .. len] in
+  let b = [0, 1 .. len] in
   do
     bytes <- Prelude.mapM (extismInputLoadU8) b
     return $ B.pack bytes
-    
+
 input :: () -> IO ByteString
 input () = do
   len <- extismInputLength
   readInputBytes len
-  
+
 inputString :: () -> IO String
 inputString () = do
   x <- input ()
@@ -39,11 +39,11 @@ inputString () = do
 
 load :: Memory -> IO ByteString
 load (Memory offs len) =
-  let b = [1, 2 .. len] in
+  let b = [0, 1 .. len] in
   do
     bytes <- Prelude.mapM (\x -> extismLoadU8 (offs + x)) b
     return $ B.pack bytes
-    
+
 store :: Memory -> ByteString -> IO ()
 store (Memory offs len) bs =
   let bytes = Prelude.zip [0..] (B.unpack bs) in
@@ -61,3 +61,85 @@ outputString :: String -> IO ()
 outputString s =
   let bs = toByteString s in
   output bs
+
+loadString :: Memory -> IO String
+loadString mem = do
+  bs <- load mem
+  return $ fromByteString bs
+
+storeString :: Memory -> String -> IO ()
+storeString mem s =
+  let bs = toByteString s in
+  store mem bs
+
+alloc :: Int -> IO Memory
+alloc n =
+  let len = fromIntegral n in
+  do
+    offs <- extismAlloc len
+    return $ Memory offs len
+
+free :: Memory -> IO ()
+free (Memory offs _) =
+  extismFree offs
+
+withMemory :: (Memory -> IO a) -> Memory -> IO a
+withMemory f m = do
+  x <- f m
+  free m
+  return x
+
+allocByteString :: ByteString -> IO Memory
+allocByteString bs = do
+  mem <- alloc (B.length bs)
+  store mem bs
+  return mem
+
+allocString :: String -> IO Memory
+allocString s =
+  let bs = toByteString s in
+  allocByteString bs
+
+memoryOffset (Memory offs _) = offs
+memoryLength (Memory _ len) = len
+findMemory offs = do
+  len <- extismLength offs
+  return $ Memory offs len
+
+getVar :: String -> IO (Maybe ByteString)
+getVar key = do
+  k <- allocString key
+  v <- extismGetVar (memoryOffset k)
+  free k
+  if v == 0 then
+    return Nothing
+  else do
+    mem <- findMemory v
+    bs <- load mem
+    free mem
+    return (Just bs)
+
+setVar :: String -> Maybe ByteString -> IO ()
+setVar key Nothing = do
+  k <- allocString key
+  extismSetVar (memoryOffset k) 0
+  free k
+setVar key (Just v) = do
+  k <- allocString key
+  x <- allocByteString v
+  extismSetVar (memoryOffset k) (memoryOffset x)
+  free k
+  free x
+
+getConfig :: String -> IO (Maybe String)
+getConfig key = do
+  k <- allocString key
+  v <- extismGetConfig (memoryOffset k)
+  free k
+  if v == 0 then
+    return Nothing
+  else do
+    mem <- findMemory v
+    s <- loadString mem
+    free mem
+    return (Just s)
