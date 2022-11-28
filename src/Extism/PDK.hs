@@ -8,6 +8,7 @@ import Data.ByteString as B
 import Data.ByteString.Internal (c2w, w2c)
 import Data.ByteString.Unsafe (unsafeUseAsCString)
 
+-- Represents a block of memory 
 data Memory = Memory MemoryOffset MemoryLength
 
 -- Helper function to convert a string to a bytestring
@@ -17,7 +18,7 @@ toByteString x = B.pack (Prelude.map c2w x)
 -- Helper function to convert a bytestring to a string
 fromByteString :: ByteString -> String
 fromByteString bs = Prelude.map w2c $ B.unpack bs
-
+  
 readInputByte i =
   extismInputLoadU8 i
 
@@ -82,6 +83,8 @@ alloc n =
     return $ Memory offs len
 
 free :: Memory -> IO ()
+free (Memory 0 _) = return ()
+free (Memory _ 0) = return ()
 free (Memory offs _) =
   extismFree offs
 
@@ -172,10 +175,6 @@ log Error msg = do
   extismLogError (memoryOffset s)
   free s
 
-
-tryFree (Memory 0 0) = return ()
-tryFree x = free x
-
 httpRequest :: Request -> Maybe ByteString -> IO Response
 httpRequest req b = 
   let json = toString req in
@@ -188,12 +187,26 @@ httpRequest req b =
     j <- allocString json
     res <- extismHTTPRequest (memoryOffset j) (memoryOffset body)
     free j
-    tryFree body
+    free body
     code <- extismHTTPStatusCode
     if res == 0 then 
-      return (Response (fromIntegral code) Nothing)
+      return (Response (fromIntegral code) (0, 0))
     else do
       mem <- findMemory res
-      bytes <- load mem
-      free mem
-      return (Response (fromIntegral code) (Just bytes))
+      return (Response (fromIntegral code) (memoryOffset mem, memoryLength mem))
+  
+httpResponseByteString :: Response -> IO ByteString
+httpResponseByteString (Response _ (offs, len)) =
+  let mem = Memory offs len in
+  do
+    x <- load mem
+    free mem
+    return x
+
+httpResponseString :: Response -> IO String
+httpResponseString (Response _ (offs, len)) =
+  let mem = Memory offs len in
+  do
+    x <- loadString mem
+    free mem
+    return x

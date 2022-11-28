@@ -31,3 +31,5 @@ foreign import ccall "extism_var_get" extismGetVar :: MemoryOffset -> IO MemoryO
 foreign import ccall "extism_var_set" extismSetVar :: MemoryOffset -> MemoryOffset -> IO ()
 foreign import ccall "extism_http_request" extismHTTPRequest :: MemoryOffset -> MemoryOffset -> IO MemoryOffset
 foreign import ccall "extism_http_status_code" extismHTTPStatusCode :: IO Int32
+foreign import ccall "__wasm_call_ctors" wasmConstructor :: IO ()
+foreign import ccall "__wasm_call_dtors" wasmDestructor :: IO ()

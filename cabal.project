@@ -1,0 +1,7 @@
+source-repository-package
+  type: git
+  location: ssh://git@github.com/extism/extism.git
+  subdir: haskell
+  tag: 70bbd45b30c9928639fcaa5ce2ddf6839c653266
+
+packages: ./extism-pdk.cabal

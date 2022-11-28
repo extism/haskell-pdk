@@ -1,25 +1,13 @@
 module Main where
 
 import Extism.PDK
-import Data.Int
 
-test = do
-  name <- inputString ()
-  x <- getConfig "greeting"
-  case x of
-    Just x ->
-      outputString $ x ++ ", " ++ name
-    Nothing ->
-      outputString $ "Hello, " ++ name
-  return 0
-foreign export ccall "test" test :: IO Int32
-
+greet g n =
+  outputString $ g ++ ", " ++ n
 
 main = do
   name <- inputString ()
-  x <- getConfig "greeting"
-  case x of
-    Just x ->
-      outputString $ x ++ ", " ++ name
-    Nothing ->
-      outputString $ "Hello, " ++ name
+  greeting <- getConfig "greeting"
+  case greeting of
+    Just greeting -> greet greeting name
+    Nothing -> greet "Hello" name
