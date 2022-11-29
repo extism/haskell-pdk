@@ -1,6 +1,7 @@
 module Main where
 
 import Extism.PDK
+import Data.Maybe
 
 greet g n =
   outputString $ g ++ ", " ++ n
@@ -8,6 +9,4 @@ greet g n =
 main = do
   name <- inputString ()
   greeting <- getConfig "greeting"
-  case greeting of
-    Just greeting -> greet greeting name
-    Nothing -> greet "Hello" name
+  greet (fromMaybe "Hello" greeting) name
