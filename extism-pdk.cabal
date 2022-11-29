@@ -34,6 +34,7 @@ library
     default-language: Haskell2010
 
 executable hello
+    scope: private
     main-is: examples/Hello.hs
     build-depends: base, extism-pdk
     default-language: Haskell2010
@@ -41,7 +42,16 @@ executable hello
         -optl -Wl,--allow-undefined
 
 executable http_get
+    scope: private
     main-is: examples/HTTPGet.hs
+    build-depends: base, extism-pdk
+    default-language: Haskell2010
+    ghc-options:
+        -optl -Wl,--allow-undefined
+
+executable count_vowels
+    scope: private
+    main-is: examples/CountVowels.hs
     build-depends: base, extism-pdk
     default-language: Haskell2010
     ghc-options:
