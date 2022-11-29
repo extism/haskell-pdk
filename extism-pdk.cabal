@@ -39,3 +39,10 @@ executable hello
     default-language: Haskell2010
     ghc-options:
         -optl -Wl,--allow-undefined
+
+executable http_get
+    main-is: HTTPGet.hs
+    build-depends: base, extism-pdk
+    default-language: Haskell2010
+    ghc-options:
+        -optl -Wl,--allow-undefined

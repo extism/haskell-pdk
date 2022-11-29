@@ -1,7 +1,6 @@
 module Extism.PDK where
 
 import Extism.PDK.Bindings
-import Extism.PDK.HTTP
 import Data.Word
 import Data.Int
 import Data.ByteString as B
@@ -51,6 +50,10 @@ store (Memory offs len) bs =
   let bytes = Prelude.zip [0..] (B.unpack bs) in
   -- TODO: use extismStoreU64 to reduce total number of stores
   Prelude.mapM_ (\(index, x) -> extismStoreU8 (offs + index) x) bytes
+
+outputMemory :: Memory -> IO ()
+outputMemory (Memory offs len) =
+  extismSetOutput offs len
 
 output :: ByteString -> IO ()
 output bs =
@@ -174,39 +177,3 @@ log Error msg = do
   s <- allocString msg
   extismLogError (memoryOffset s)
   free s
-
-httpRequest :: Request -> Maybe ByteString -> IO Response
-httpRequest req b = 
-  let json = toString req in
-  let bodyMem = case b of
-               Nothing -> return $ Memory 0 0
-               Just b -> allocByteString b
-  in
-  do
-    body <- bodyMem
-    j <- allocString json
-    res <- extismHTTPRequest (memoryOffset j) (memoryOffset body)
-    free j
-    free body
-    code <- extismHTTPStatusCode
-    if res == 0 then 
-      return (Response (fromIntegral code) (0, 0))
-    else do
-      mem <- findMemory res
-      return (Response (fromIntegral code) (memoryOffset mem, memoryLength mem))
-  
-httpResponseByteString :: Response -> IO ByteString
-httpResponseByteString (Response _ (offs, len)) =
-  let mem = Memory offs len in
-  do
-    x <- load mem
-    free mem
-    return x
-
-httpResponseString :: Response -> IO String
-httpResponseString (Response _ (offs, len)) =
-  let mem = Memory offs len in
-  do
-    x <- loadString mem
-    free mem
-    return x
