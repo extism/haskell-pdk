@@ -34,14 +34,14 @@ library
     default-language: Haskell2010
 
 executable hello
-    main-is: Hello.hs
+    main-is: examples/Hello.hs
     build-depends: base, extism-pdk
     default-language: Haskell2010
     ghc-options:
         -optl -Wl,--allow-undefined
 
 executable http_get
-    main-is: HTTPGet.hs
+    main-is: examples/HTTPGet.hs
     build-depends: base, extism-pdk
     default-language: Haskell2010
     ghc-options:
