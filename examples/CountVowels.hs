@@ -1,6 +1,7 @@
 module Main where
 
 import Extism.PDK
+import Extism.PDK.JSON
 
 isVowel c = 
   c == 'a' || c == 'A' ||
@@ -10,6 +11,6 @@ isVowel c =
   c == 'u' || c == 'U'
 
 main = do
-  s <- inputString ()
+  s <- inputString
   let count = length (filter isVowel s)
-  outputString ("{\"count\": " ++ show count ++ "}")
+  outputJSON $ object ["count" .= count]

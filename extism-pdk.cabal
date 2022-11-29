@@ -22,7 +22,7 @@ maintainer:         oss@dylib.so
 extra-source-files: CHANGELOG.md
 
 library
-    exposed-modules: Extism.PDK Extism.PDK.Bindings Extism.PDK.HTTP
+    exposed-modules: Extism.PDK Extism.PDK.Bindings Extism.PDK.HTTP Extism.PDK.JSON
 
     -- Modules included in this executable, other than Main.
     -- other-modules:

@@ -1,13 +1,15 @@
-module Extism.PDK where
+module Extism.PDK (module Extism.PDK, module Extism.Manifest) where
 
 import Extism.PDK.Bindings
+import Extism.Manifest(JSONValue, toJSONValue, toString)
 import Data.Word
 import Data.Int
 import Data.ByteString as B
 import Data.ByteString.Internal (c2w, w2c)
 import Data.ByteString.Unsafe (unsafeUseAsCString)
+import Text.JSON(JSON, decode, resultToEither)
 
--- Represents a block of memory 
+-- Represents a block of memory
 data Memory = Memory MemoryOffset MemoryLength
 
 -- Helper function to convert a string to a bytestring
@@ -17,7 +19,7 @@ toByteString x = B.pack (Prelude.map c2w x)
 -- Helper function to convert a bytestring to a string
 fromByteString :: ByteString -> String
 fromByteString bs = Prelude.map w2c $ B.unpack bs
-  
+
 readInputByte i =
   extismInputLoadU8 i
 
@@ -27,15 +29,22 @@ readInputBytes len =
     bytes <- Prelude.mapM (extismInputLoadU8) b
     return $ B.pack bytes
 
-input :: () -> IO ByteString
-input () = do
+input :: IO ByteString
+input = do
   len <- extismInputLength
   readInputBytes len
 
-inputString :: () -> IO String
-inputString () = do
-  x <- input ()
+inputString :: IO String
+inputString = do
+  x <- input
   return $ fromByteString x
+
+inputJSON :: JSON a => IO (Maybe a)
+inputJSON = do
+  s <- inputString
+  case resultToEither $ decode s of
+    Left _ -> return Nothing
+    Right x -> return (Just x)
 
 load :: Memory -> IO ByteString
 load (Memory offs len) =
@@ -67,6 +76,10 @@ outputString :: String -> IO ()
 outputString s =
   let bs = toByteString s in
   output bs
+
+outputJSON :: JSONValue a => a -> IO ()
+outputJSON x =
+  outputString (toString $ toJSONValue x)
 
 loadString :: Memory -> IO String
 loadString mem = do
@@ -157,7 +170,7 @@ error msg = do
   s <- allocString msg
   extismSetError (memoryOffset s)
   free s
-  
+
 data LogLevel = Info | Debug | Warn | Error
 
 log :: LogLevel -> String -> IO ()

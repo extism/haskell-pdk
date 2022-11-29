@@ -7,6 +7,6 @@ greet g n =
   outputString $ g ++ ", " ++ n
 
 main = do
-  name <- inputString ()
+  name <- inputString
   greeting <- getConfig "greeting"
   greet (fromMaybe "Hello" greeting) name
