@@ -56,7 +56,7 @@ jobs:
       - name: Test call command
         run: |
           TEST=$(extism call ./count_vowels.wasm _start --wasi --input "this is a test")
-          echo $TEST | grep '"count": 4'
+          echo $TEST | grep '"count":4'
 
           TEST=$(extism call ./hello.wasm _start --wasi --input "Name" --config greeting="Hi there")
           echo $TEST | grep 'Hi there, Name"
