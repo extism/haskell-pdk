@@ -20,12 +20,6 @@ toByteString x = B.pack (Prelude.map c2w x)
 fromByteString :: ByteString -> String
 fromByteString bs = Prelude.map w2c $ B.unpack bs
 
-readInputBytes len =
-  let b = [0, 1 .. len] in
-  do
-    bytes <- Prelude.mapM extismInputLoadU8 b
-    return $ B.pack bytes
-
 -- | Get plugin input as 'ByteString'
 input :: IO ByteString
 input = do
@@ -56,18 +50,12 @@ inputJSON = do
 -- | Load data from 'Memory' block into a 'ByteString'
 load :: Memory -> IO ByteString
 load (Memory offs len) =
-  let b = [0, 1 .. len] in
-  do
-    -- TODO: use extismLoadU64 to reduce total number of loads
-    bytes <- Prelude.mapM (\x -> extismLoadU8 (offs + x)) b
-    return $ B.pack bytes
+  readBytes offs len
 
 -- | Store data from a 'ByteString' into a 'Memory' block
 store :: Memory -> ByteString -> IO ()
 store (Memory offs len) bs =
-  let bytes = Prelude.zip [0..] (B.unpack bs) in
-  -- TODO: use extismStoreU64 to reduce total number of stores
-  Prelude.mapM_ (\(index, x) -> extismStoreU8 (offs + index) x) bytes
+  writeBytes offs len bs
 
 -- | Set plugin output to the provided 'Memory' block
 outputMemory :: Memory -> IO ()
