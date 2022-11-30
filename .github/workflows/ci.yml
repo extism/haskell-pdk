@@ -47,9 +47,10 @@ jobs:
 
           extism install git
 
-      - name: Build plugins
-        run: |
-          nix shell https://gitlab.haskell.org/ghc/ghc-wasm-meta/-/archive/master/ghc-wasm-meta-master.tar.gz
+      - uses: workflow/nix-shell-action@v3
+        with:
+        packages: https://gitlab.haskell.org/ghc/ghc-wasm-meta/-/archive/master/ghc-wasm-meta-master.tar.gz
+        script: |
           make
 
       - name: Test call command
