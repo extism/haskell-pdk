@@ -11,17 +11,12 @@ jobs:
           - stable
     steps:
       - uses: actions/checkout@v3
-
-      - uses: cachix/install-nix-action@v18
-
+      
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
           override: true
-
-      - name: Install wasm32 target
-        run: rustup target add wasm32-unknown-unknown
 
       - name: Setup Python env
         uses: actions/setup-python@v4
@@ -46,12 +41,17 @@ jobs:
           popd
 
           extism install git
-
-      - uses: workflow/nix-shell-action@v3
-        with:
-          packages: https://gitlab.haskell.org/ghc/ghc-wasm-meta/-/archive/master/ghc-wasm-meta-master.tar.gz
-          script: |
-            make
+      
+      - name: Install wasm32-wasi-ghc
+        run: |
+          git clone https://gitlab.haskell.org/ghc/ghc-wasm-meta
+          pushd ghc-wasm-meta
+          ./setup.sh
+      
+      - name: Build examples
+        run: |
+          source ~/.ghc-wasm/env
+          make
 
       - name: Test call command
         run: |
