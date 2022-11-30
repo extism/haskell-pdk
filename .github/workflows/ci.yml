@@ -59,7 +59,7 @@ jobs:
           echo $TEST | grep '"count":4'
 
           TEST=$(extism call ./hello.wasm _start --wasi --input "Name" --config greeting="Hi there")
-          echo $TEST | grep 'Hi there, Name"
+          echo $TEST | grep 'Hi there, Name'
 
           TEST=$(extism call ./http_get.wasm _start --wasi --input "https://jsonplaceholder.typicode.com/todos/1")
           echo $TEST | grep '"userId": 1'
