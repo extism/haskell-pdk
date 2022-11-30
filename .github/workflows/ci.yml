@@ -49,9 +49,9 @@ jobs:
 
       - uses: workflow/nix-shell-action@v3
         with:
-        packages: https://gitlab.haskell.org/ghc/ghc-wasm-meta/-/archive/master/ghc-wasm-meta-master.tar.gz
-        script: |
-          make
+          packages: https://gitlab.haskell.org/ghc/ghc-wasm-meta/-/archive/master/ghc-wasm-meta-master.tar.gz
+          script: |
+            make
 
       - name: Test call command
         run: |
