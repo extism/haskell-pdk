@@ -11,6 +11,9 @@ isVowel c =
   c == 'u' || c == 'U'
 
 main = do
+  -- Get input string from Extism host
   s <- inputString
+  -- Calculate the number of vowels
   let count = length (filter isVowel s)
+  -- Return a JSON object {"count": count} back to the host
   outputJSON $ object ["count" .= count]
