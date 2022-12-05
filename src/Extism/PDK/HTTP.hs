@@ -1,6 +1,6 @@
 module Extism.PDK.HTTP where
 
-import Extism.Manifest(toString, HTTPRequest(..), method, header, url)
+import Extism.Manifest(toString, HTTPRequest(..), method, headers, url)
 import Extism.PDK.Bindings
 import Extism.PDK
 import Data.Word
@@ -21,7 +21,7 @@ newRequest :: String -> Request
 newRequest url =
   HTTPRequest {
     url = url
-  , header = Nothing
+  , headers = Nothing
   , method = Nothing
   }
 
@@ -33,7 +33,7 @@ withMethod meth req =
 -- | Update a 'Request' with the provided HTTP request headers
 withHeaders :: [(String, String)] -> Request -> Request
 withHeaders h req =
-  req { header = Just h }
+  req { headers = Just h }
 
 -- | Access the Memory block associated with a 'Response'
 responseMemory :: Response -> Memory
