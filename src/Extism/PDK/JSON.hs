@@ -13,4 +13,4 @@ import Text.JSON.Types
 ( .? ) obj k = get_field obj k
 ( +++ ) obj (k, v) = set_field obj k (toJSONValue v)
   
-lookup obj k = obj .? k
+lookup k obj = obj .? k
