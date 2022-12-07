@@ -1,7 +1,7 @@
 module Extism.PDK (module Extism.PDK, module Extism.Manifest) where
 
 import Extism.PDK.Bindings
-import Extism.Manifest(JSONValue, toJSONValue, toString)
+import Extism.Manifest(JSValue, JSON, toString)
 import Data.Word
 import Data.Int
 import Data.ByteString as B
@@ -78,9 +78,9 @@ outputString s =
   output bs
 
 -- | Set plugin output to a JSON encoded version of the provided value
-outputJSON :: JSONValue a => a -> IO ()
+outputJSON :: JSON a => a -> IO ()
 outputJSON x =
-  outputString (toString $ toJSONValue x)
+  outputString (toString x)
 
 -- | Load string from 'Memory' block
 loadString :: Memory -> IO String

@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, TypeOperators #-}
 
 module Extism.PDK.MsgPack (
   module Extism.PDK.MsgPack, 
@@ -16,19 +16,35 @@ import qualified Data.ByteString as B
 import Data.ByteString.Internal (c2w, w2c)
 import qualified Data.Serialize as S
 
--- ( .? ) obj k = get_field obj k
--- ( +++ ) obj (k, v) = set_field obj k (toJSONValue v)
-  
--- lookup obj k = obj .? k
-
 class MsgPack a where
   toMsgPack :: a -> Object
   fromMsgPack :: Object -> Maybe a
 
+class GMsgPack f  where
+  toGMsgPack :: f a -> Object
+  fromGMsgPack :: Object -> Maybe (f a)
+  fromGMsgPack _ = Nothing
+  
+instance GMsgPack U1 where
+  toGMsgPack U1 = ObjectNil
+  fromGMsgPack ObjectNil = Just U1
+  
+instance (GMsgPack a, GMsgPack b) => GMsgPack ( a :*: b) where
+  toGMsgPack (x :*: y) = array [toGMsgPack x, toGMsgPack y]
+  -- fromGMsgPack (ObjectArray [a, b]) = Just (a :*: b)
+  
+instance (GMsgPack a, GMsgPack b) => GMsgPack ( a :+: b) where
+  toGMsgPack (L1 x) = toGMsgPack x
+  toGMsgPack (R1 x) = toGMsgPack x
+  
+instance GMsgPack a => GMsgPack (M1 i c a) where
+  toGMsgPack (M1 x) = toGMsgPack x
+  
+instance (MsgPack a) => GMsgPack (K1 i a) where
+  toGMsgPack (K1 x) = toMsgPack x
 
 toByteString x = B.pack (Prelude.map c2w x)
 fromByteString bs = Prelude.map w2c $ B.unpack bs
-
 
 instance MsgPack Bool where
   toMsgPack b = ObjectBool b
@@ -87,12 +103,6 @@ instance MsgPack Double where
   toMsgPack d = ObjectDouble d
   fromMsgPack (ObjectDouble d) = Just d
   fromMsgPack _ = Nothing
-  
-instance MsgPack (U1 a) where
-  toMsgPack d = ObjectNil
-  fromMsgPack ObjectNil = Just U1
-  fromMsgPack _ = Nothing
-
   
 instance MsgPack Object where
   toMsgPack x = x
