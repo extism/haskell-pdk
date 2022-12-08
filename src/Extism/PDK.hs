@@ -1,7 +1,8 @@
 module Extism.PDK (module Extism.PDK, module Extism.Manifest) where
 
 import Extism.PDK.Bindings
-import Extism.Manifest(JSValue, JSON, toString)
+import Extism.JSON(JSValue, JSON)
+import Extism.Manifest(toString)
 import Data.Word
 import Data.Int
 import Data.ByteString as B

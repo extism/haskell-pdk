@@ -1,6 +1,7 @@
 module Extism.PDK.HTTP where
 
-import Extism.Manifest(toString, HTTPRequest(..), method, headers, url, Nullable(..))
+import Extism.Manifest(toString, HTTPRequest(..), method, headers, url)
+import Extism.JSON(Nullable(..))
 import Extism.PDK.Bindings
 import Extism.PDK
 import Data.Word
