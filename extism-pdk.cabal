@@ -30,7 +30,6 @@ library
     build-depends:    base  >4.16.1 && <4.18.0, bytestring, extism-manifest, json, messagepack, containers, cereal
     hs-source-dirs:   src
     default-language: Haskell2010
-    ghc-options: 
 
 executable hello
     scope: private
@@ -38,7 +37,7 @@ executable hello
     build-depends: base, extism-pdk
     default-language: Haskell2010
     ghc-options:
-        -optl -Wl,--export=hs_init -optl -Wl,--export=hs_exit -optl -Wl,--allow-undefined -optl -Wl,--export=testing 
+      -optl -Wl,--export=testing
 
 executable http_get
     scope: private
@@ -46,7 +45,6 @@ executable http_get
     build-depends: base, extism-pdk
     default-language: Haskell2010
     ghc-options:
-        -optl -Wl,--export=hs_init -optl -Wl,--export=hs_exit -optl -Wl,--allow-undefined
 
 executable count_vowels
     scope: private
@@ -54,4 +52,3 @@ executable count_vowels
     build-depends: base, extism-pdk
     default-language: Haskell2010
     ghc-options:
-        -optl -Wl,--export=hs_init -optl -Wl,--export=hs_exit -optl -Wl,--allow-undefined

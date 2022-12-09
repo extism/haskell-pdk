@@ -6,3 +6,7 @@ source-repository-package
 packages:
  ./extism-pdk.cabal
  -- http://hackage.haskell.org/package/extism-manifest-0.0.1/candidate/extism-manifest-0.0.1.tar.gz
+
+package extism-pdk
+  ghc-options:
+    -optl -Wl,--export=hs_init -optl -Wl,--export=hs_exit -optl -Wl,--allow-undefined
