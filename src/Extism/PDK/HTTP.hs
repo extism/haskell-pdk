@@ -1,7 +1,7 @@
 module Extism.PDK.HTTP where
 
 import Extism.Manifest(toString, HTTPRequest(..), method, headers, url)
-import Extism.JSON(Nullable(..))
+import Extism.JSON(Nullable(..), decode, JSON, Result(..))
 import Extism.PDK.Bindings
 import Extism.PDK
 import Data.Word
@@ -47,6 +47,15 @@ responseByteString (Response _ mem) = load mem
 -- | Get the 'Response' body as a 'String'
 responseString :: Response -> IO String
 responseString (Response _ mem) = loadString mem
+
+-- | Get the 'Response' body as JSON
+responseJSON :: JSON a => Response -> IO (Either String a)
+responseJSON (Response _ mem) = do
+  json <- decode <$> loadString mem
+  case json of
+    Ok json -> return $ Right json
+    Extism.JSON.Error msg -> return (Left msg)
+
 
 -- | Send HTTP request with an optional request body
 sendRequest :: Request -> Maybe ByteString -> IO Response
