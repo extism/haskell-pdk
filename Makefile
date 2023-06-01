@@ -4,7 +4,7 @@ build:
 	wasm32-wasi-cabal build
 	
 %.example: build
-	cp dist-newstyle/build/wasm32-wasi/**/extism-pdk-0.1.0.0/x/$*/build/$*/$* ./$*.wasm
+	cp `find dist-newstyle/build/wasm32-wasi/ -name $*.wasm` ./$*.wasm
 
 clean:
 	cabal clean
