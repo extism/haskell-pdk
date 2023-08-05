@@ -45,6 +45,7 @@ executable http_get
     build-depends: base, extism-pdk
     default-language: Haskell2010
     ghc-options:
+      -optl -Wl,--export=http_get
 
 executable count_vowels
     scope: private
@@ -52,3 +53,4 @@ executable count_vowels
     build-depends: base, extism-pdk
     default-language: Haskell2010
     ghc-options:
+      -optl -Wl,--export=count_vowels
