@@ -13,4 +13,4 @@ source-repository-package
 
 package extism-pdk
   ghc-options:
-    -optl -Wl,--export=hs_init -optl -Wl,--export=hs_exit -optl -Wl,--allow-undefined -no-hs-main -optl-mexec-model=reactor 
+    -optl -Wl,--export=hs_init -optl -Wl,--allow-undefined -no-hs-main -optl-mexec-model=reactor 
