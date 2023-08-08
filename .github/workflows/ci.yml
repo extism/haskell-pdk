@@ -55,11 +55,11 @@ jobs:
 
       - name: Test call command
         run: |
-          TEST=$(extism call ./count_vowels.wasm _start --wasi --input "this is a test")
+          TEST=$(extism call ./count_vowels.wasm count_vowels --wasi --input "this is a test")
           echo $TEST | grep '"count":4'
 
-          TEST=$(extism call ./hello.wasm _start --wasi --input "Name" --config greeting="Hi there")
+          TEST=$(extism call ./hello.wasm hello --wasi --input "Name" --config greeting="Hi there")
           echo $TEST | grep 'Hi there, Name'
 
-          TEST=$(extism call ./http_get.wasm _start --wasi --input "https://jsonplaceholder.typicode.com/todos/1" --allow-host '*.typicode.com')
+          TEST=$(extism call ./http_get.wasm http_get --wasi --input "https://jsonplaceholder.typicode.com/todos/1" --allow-host '*.typicode.com')
           echo $TEST | grep '"userId": 1'
