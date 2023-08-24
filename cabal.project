@@ -6,11 +6,6 @@ source-repository-package
 packages:
   ./extism-pdk.cabal
 
-source-repository-package
-  type: git
-  location: https://github.com/extism/extism.git
-  subdir: haskell/manifest
-
 package extism-pdk
   ghc-options:
     -optl -Wl,--export=hs_init -optl -Wl,--allow-undefined -no-hs-main -optl-mexec-model=reactor 
