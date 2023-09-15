@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+
 module Extism.PDK (module Extism.PDK, module Extism.Manifest) where
 
 import Extism.PDK.Bindings
@@ -21,15 +23,29 @@ toByteString x = B.pack (Prelude.map c2w x)
 fromByteString :: ByteString -> String
 fromByteString bs = Prelude.map w2c $ B.unpack bs
 
+class FromBytes a where
+  fromBytes :: ByteString -> a
+
+class ToBytes a where
+  toBytes :: a -> ByteString
+
+instance FromBytes ByteString where
+  fromBytes bs = bs
+
+instance ToBytes ByteString where
+  toBytes bs = bs
+
+instance FromBytes String where
+  fromBytes = fromByteString
+
+instance ToBytes String where
+  toBytes = toByteString
+
 -- | Get plugin input as 'ByteString'
-input :: IO ByteString
+input :: FromBytes a => IO a
 input = do
   len <- extismInputLength
-  readInputBytes len
-
--- | Get plugin input as 'String'
-inputString :: IO String
-inputString = fromByteString <$> input
+  fromBytes <$> readInputBytes len
 
 -- | Get plugin input as 'Memory' block
 inputMemory :: IO Memory
@@ -43,19 +59,20 @@ inputMemory = do
 -- | Get input as 'JSON'
 inputJSON :: JSON a => IO (Maybe a)
 inputJSON = do
-  s <- inputString
+  s <- input :: IO String
   case resultToEither $ decode s of
     Left _ -> return Nothing
     Right x -> return (Just x)
 
--- | Load data from 'Memory' block into a 'ByteString'
-load :: Memory -> IO ByteString
+-- | Load data from 'Memory' block
+load :: FromBytes a => Memory -> IO a
 load (Memory offs len) =
-  readBytes offs len
+  fromBytes <$> readBytes offs len
 
--- | Store data from a 'ByteString' into a 'Memory' block
-store :: Memory -> ByteString -> IO ()
-store (Memory offs len) bs =
+-- | Store data into a 'Memory' block
+store :: ToBytes a => Memory -> a -> IO ()
+store (Memory offs len) a =
+  let bs = toBytes a in
   writeBytes offs len bs
 
 -- | Set plugin output to the provided 'Memory' block
@@ -64,24 +81,19 @@ outputMemory (Memory offs len) =
   extismSetOutput offs len
 
 -- | Set plugin output to the provided 'ByteString'
-output :: ByteString -> IO ()
-output bs =
+output :: ToBytes a => a -> IO ()
+output x =
+  let bs = toBytes x in
   let len = fromIntegral $ B.length bs in
   do
     offs <- extismAlloc len
     b <- store (Memory offs len) bs
     extismSetOutput offs len
 
--- | Set plugin output to the provided 'String'
-outputString :: String -> IO ()
-outputString s =
-  let bs = toByteString s in
-  output bs
-
 -- | Set plugin output to a JSON encoded version of the provided value
 outputJSON :: JSON a => a -> IO ()
 outputJSON x =
-  outputString (toString x)
+  output (toString x)
 
 -- | Load string from 'Memory' block
 loadString :: Memory -> IO String
@@ -149,14 +161,14 @@ getVar key = do
     return (Just bs)
 
 -- | Set a variable
-setVar :: String -> Maybe ByteString -> IO ()
+setVar :: ToBytes a => String -> Maybe a -> IO ()
 setVar key Nothing = do
   k <- allocString key
   extismSetVar (memoryOffset k) 0
   free k
 setVar key (Just v) = do
   k <- allocString key
-  x <- allocByteString v
+  x <- allocByteString (toBytes v)
   extismSetVar (memoryOffset k) (memoryOffset x)
   free k
   free x

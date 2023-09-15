@@ -7,11 +7,11 @@ import Foreign.C.Types
 defaultGreeting = "Hello"
 
 greet g n =
-  outputString $ g ++ ", " ++ n
+  output $ g ++ ", " ++ n
   
 testing = do
   -- Get a name from the Extism runtime
-  name <- inputString
+  name <- input
   -- Get  configured greeting
   greeting <- getConfig "greeting"
   -- Greet the user, if no greeting is configured then "Hello" is used
