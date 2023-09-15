@@ -16,6 +16,6 @@ countVowels = do
   -- Calculate the number of vowels
   let count = length (filter isVowel s)
   -- Return a JSON object {"count": count} back to the host
-  outputJSON $ object ["count" .= count]
+  output $ JSONValue $ object ["count" .= count]
 
 foreign export ccall "count_vowels" countVowels ::  IO ()
