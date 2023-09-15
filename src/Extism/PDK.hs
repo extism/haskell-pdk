@@ -10,7 +10,11 @@ import Data.Int
 import Data.ByteString as B
 import Data.ByteString.Internal (c2w, w2c)
 import Data.ByteString.Unsafe (unsafeUseAsCString)
-import Text.JSON(JSON, decode, resultToEither)
+import Text.JSON(JSON, decode, encode, resultToEither)
+import qualified Extism.PDK.MsgPack(MsgPack, decode, encode)
+
+newtype JSONValue a = JSONValue a
+newtype MsgPackValue a = MsgPackValue a
 
 -- | Represents a block of memory
 data Memory = Memory MemoryOffset MemoryLength
@@ -40,6 +44,24 @@ instance FromBytes String where
 
 instance ToBytes String where
   toBytes = toByteString
+
+instance JSON a => FromBytes (JSONValue a) where
+  fromBytes x =
+    case resultToEither $ decode (fromByteString x) of
+      Left e -> error e
+      Right y -> JSONValue y
+
+instance JSON a => ToBytes (JSONValue a) where
+  toBytes (JSONValue x) = toByteString (encode x)
+
+instance Extism.PDK.MsgPack.MsgPack a => FromBytes (MsgPackValue a) where
+  fromBytes x =
+    case Extism.PDK.MsgPack.decode x of
+      Left e -> error e
+      Right y -> MsgPackValue y
+
+instance Extism.PDK.MsgPack.MsgPack a => ToBytes (MsgPackValue a) where
+  toBytes (MsgPackValue x) = Extism.PDK.MsgPack.encode x
 
 -- | Get plugin input as 'ByteString'
 input :: FromBytes a => IO a
@@ -188,8 +210,8 @@ getConfig key = do
     return $ Just s
 
 -- | Set the current error message
-error :: String -> IO ()
-error msg = do
+setError :: String -> IO ()
+setError msg = do
   s <- allocString msg
   extismSetError $ memoryOffset s
   free s
