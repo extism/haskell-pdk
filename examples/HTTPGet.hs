@@ -5,7 +5,7 @@ import Extism.PDK.HTTP
 
 httpGet = do
   -- Get URL from the host
-  url <- inputString
+  url <- input
   -- Create a new 'Request'
   let req = newRequest url
   -- Send the request, get a 'Response'
