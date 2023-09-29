@@ -6,6 +6,7 @@ import Extism.JSON (JSON, Nullable (..), Result (..), decode)
 import Extism.Manifest (HTTPRequest (..), headers, method, toString, url)
 import Extism.PDK
 import Extism.PDK.Bindings
+import Extism.PDK.Memory
 
 -- | HTTP Request
 type Request = HTTPRequest
@@ -41,7 +42,11 @@ responseMemory (Response _ mem) = mem
 
 -- | Get the 'Response' body as a 'ByteString'
 responseByteString :: Response -> IO ByteString
-responseByteString (Response _ mem) = load mem
+responseByteString (Response _ mem) = do
+  a <- load mem
+  case a of
+    Left e -> error e
+    Right x -> return x
 
 -- | Get the 'Response' body as a 'String'
 responseString :: Response -> IO String

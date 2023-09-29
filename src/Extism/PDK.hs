@@ -1,7 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Extism.PDK (module Extism.PDK, module Extism.Manifest) where
+module Extism.PDK (module Extism.PDK, module Extism.Manifest, ToBytes (..), FromBytes (..)) where
 
+import Data.Binary.Get
+import Data.Binary.Put
 import Data.ByteString as B
 import Data.ByteString.Unsafe (unsafeUseAsCString)
 import Data.Int
@@ -9,6 +11,7 @@ import Data.Word
 import Extism.JSON (JSON, JSValue)
 import Extism.Manifest (toString)
 import Extism.PDK.Bindings
+import Extism.PDK.Memory
 import qualified Extism.PDK.MsgPack (MsgPack, decode, encode)
 import Extism.PDK.Util
 import Text.JSON (JSON, decode, encode, resultToEither)
@@ -19,25 +22,14 @@ newtype JSONValue a = JSONValue a
 -- | A wrapper type for MsgPack encoded values
 newtype MsgPackValue a = MsgPackValue a
 
--- | Represents a block of memory by offset and length
-data Memory = Memory MemoryOffset MemoryLength
-
--- | A class used to convert values from bytes read from linear memory
-class FromBytes a where
-  fromBytes :: ByteString -> a
-
--- | A class used to convert values to bytes to be written into linear memory
-class ToBytes a where
-  toBytes :: a -> ByteString
-
 instance FromBytes ByteString where
-  fromBytes bs = bs
+  fromBytes = Right
 
 instance ToBytes ByteString where
   toBytes bs = bs
 
 instance FromBytes String where
-  fromBytes = fromByteString
+  fromBytes = Right . fromByteString
 
 instance ToBytes String where
   toBytes = toByteString
@@ -45,8 +37,8 @@ instance ToBytes String where
 instance (JSON a) => FromBytes (JSONValue a) where
   fromBytes x =
     case resultToEither $ decode (fromByteString x) of
-      Left e -> error e
-      Right y -> JSONValue y
+      Left e -> Left e
+      Right y -> Right (JSONValue y)
 
 instance (JSON a) => ToBytes (JSONValue a) where
   toBytes (JSONValue x) = toByteString (encode x)
@@ -54,53 +46,40 @@ instance (JSON a) => ToBytes (JSONValue a) where
 instance (Extism.PDK.MsgPack.MsgPack a) => FromBytes (MsgPackValue a) where
   fromBytes x =
     case Extism.PDK.MsgPack.decode x of
-      Left e -> error e
-      Right y -> MsgPackValue y
+      Left e -> Left e
+      Right y -> Right (MsgPackValue y)
 
 instance (Extism.PDK.MsgPack.MsgPack a) => ToBytes (MsgPackValue a) where
   toBytes (MsgPackValue x) = Extism.PDK.MsgPack.encode x
 
 -- | Get plugin input
-input :: (FromBytes a) => IO a
+input :: (FromBytes a) => IO (Either String a)
 input = do
   len <- extismInputLength
   fromBytes <$> readInputBytes len
 
--- | Get plugin input as 'Memory' block
-inputMemory :: IO Memory
-inputMemory = do
+-- | Get plugin input as a String
+inputString :: IO String
+inputString = do
   len <- extismInputLength
-  offs <- extismAlloc len
-  Prelude.mapM_
-    ( \x ->
-        extismStoreU8 (offs + x) <$> extismInputLoadU8 x
-    )
-    [0, 1 .. len]
-  return $ Memory offs len
+  fromByteString <$> readInputBytes len
+
+-- | Get plugin input as a ByteString
+inputByteString :: IO ByteString
+inputByteString = do
+  len <- extismInputLength
+  readInputBytes len
 
 -- | Get input as 'JSON', this is similar to calling `input (JsonValue ...)`
-inputJSON :: (JSON a) => IO (Maybe a)
+inputJSON :: (JSON a) => IO (Either String a)
 inputJSON = do
-  s <- input :: IO String
-  case resultToEither $ decode s of
-    Left _ -> return Nothing
-    Right x -> return (Just x)
-
--- | Load data from 'Memory' block
-load :: (FromBytes a) => Memory -> IO a
-load (Memory offs len) =
-  fromBytes <$> readBytes offs len
-
--- | Store data into a 'Memory' block
-store :: (ToBytes a) => Memory -> a -> IO ()
-store (Memory offs len) a =
-  let bs = toBytes a
-   in writeBytes offs len bs
-
--- | Set plugin output to the provided 'Memory' block
-outputMemory :: Memory -> IO ()
-outputMemory (Memory offs len) =
-  extismSetOutput offs len
+  s <- input :: IO (Either String String)
+  case s of
+    Left e -> return (Left e)
+    Right x ->
+      case resultToEither $ decode x of
+        Left e -> return (Left e)
+        Right y -> return (Right y)
 
 -- | Set plugin output
 output :: (ToBytes a) => a -> IO ()
@@ -121,7 +100,9 @@ outputJSON x =
 loadString :: Memory -> IO String
 loadString mem = do
   bs <- load mem
-  return $ fromByteString bs
+  case bs of
+    Left e -> error e
+    Right x -> return $ fromByteString x
 
 -- | Store string in 'Memory' block
 storeString :: Memory -> String -> IO ()
@@ -181,8 +162,10 @@ getVar key = do
     else do
       mem <- findMemory v
       bs <- load mem
-      free mem
-      return (Just bs)
+      free k
+      case bs of
+        Left _ -> return Nothing
+        Right x -> return (Just x)
 
 -- | Set a variable
 setVar :: (ToBytes a) => String -> Maybe a -> IO ()
@@ -239,3 +222,57 @@ log Error msg = do
   s <- allocString msg
   extismLogError (memoryOffset s)
   free s
+
+instance ToBytes Int32 where
+  toBytes i = B.toStrict (runPut (putInt32le i))
+
+instance FromBytes Int32 where
+  fromBytes bs =
+    case runGetOrFail getInt32le (B.fromStrict bs) of
+      Left (_, _, e) -> Left e
+      Right (_, _, x) -> Right x
+
+instance ToBytes Int64 where
+  toBytes i = B.toStrict (runPut (putInt64le i))
+
+instance FromBytes Int64 where
+  fromBytes bs =
+    case runGetOrFail getInt64le (B.fromStrict bs) of
+      Left (_, _, e) -> Left e
+      Right (_, _, x) -> Right x
+
+instance ToBytes Word32 where
+  toBytes i = B.toStrict (runPut (putWord32le i))
+
+instance FromBytes Word32 where
+  fromBytes bs =
+    case runGetOrFail getWord32le (B.fromStrict bs) of
+      Left (_, _, e) -> Left e
+      Right (_, _, x) -> Right x
+
+instance ToBytes Word64 where
+  toBytes i = B.toStrict (runPut (putWord64le i))
+
+instance FromBytes Word64 where
+  fromBytes bs =
+    case runGetOrFail getWord64le (B.fromStrict bs) of
+      Left (_, _, e) -> Left e
+      Right (_, _, x) -> Right x
+
+instance ToBytes Float where
+  toBytes i = B.toStrict (runPut (putFloatle i))
+
+instance FromBytes Float where
+  fromBytes bs =
+    case runGetOrFail getFloatle (B.fromStrict bs) of
+      Left (_, _, e) -> Left e
+      Right (_, _, x) -> Right x
+
+instance ToBytes Double where
+  toBytes i = B.toStrict (runPut (putDoublele i))
+
+instance FromBytes Double where
+  fromBytes bs =
+    case runGetOrFail getDoublele (B.fromStrict bs) of
+      Left (_, _, e) -> Left e
+      Right (_, _, x) -> Right x
