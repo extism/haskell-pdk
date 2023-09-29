@@ -14,6 +14,7 @@ jobs:
         with:
           enable-stack: false
       - run: make publish
+      - run: cabal update
       - uses: haskell-actions/hackage-publish@v1
         with:
           hackageToken: "${{ secrets.HACKAGE_AUTH_TOKEN }}"
