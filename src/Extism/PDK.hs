@@ -146,8 +146,8 @@ free (Memory offs _) =
 
 -- | Allocate a new 'Memory' block and copy the encoded value
 allocBytes :: (ToBytes a) => a -> IO Memory
-allocBytes bs = do
-  let bs = toBytes bs
+allocBytes x = do
+  let bs = toBytes x
   mem <- alloc (B.length bs)
   store mem bs
   return mem

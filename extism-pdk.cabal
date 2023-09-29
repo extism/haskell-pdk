@@ -52,7 +52,7 @@ executable hello
     build-depends: base, extism-pdk
     default-language: Haskell2010
     ghc-options:
-      -optl -Wl,--export=testing
+      -optl -Wl,--export=testing 
 
 executable http_get
     scope: private
