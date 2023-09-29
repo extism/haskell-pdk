@@ -8,3 +8,8 @@ build:
 
 clean:
 	cabal clean
+
+publish: clean
+	cabal v2-haddock --haddock-for-hackage
+	cabal sdist
+
