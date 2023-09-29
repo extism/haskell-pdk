@@ -1,6 +1,7 @@
 all: hello.example http_get.example count_vowels.example
 
 build:
+	wasm32-wasi-cabal update
 	wasm32-wasi-cabal build
 	
 %.example: build
