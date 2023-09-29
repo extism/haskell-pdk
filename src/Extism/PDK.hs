@@ -112,7 +112,6 @@ setError :: String -> IO ()
 setError msg = do
   s <- allocString msg
   extismSetError $ memoryOffset s
-  free s
 
 -- | Log level
 data LogLevel = Info | Debug | Warn | Error
