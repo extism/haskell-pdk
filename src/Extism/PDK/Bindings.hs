@@ -13,12 +13,16 @@ import Foreign.Ptr
 import Foreign.Storable
 import System.Exit
 
+-- | Offset in Extism memory
 type MemoryOffset = Word64
 
+-- | Offset of input from 0 to 'InputLength'
 type InputOffset = Word64
 
+-- | Length of allocated block of memory
 type MemoryLength = Word64
 
+-- | Total length of the input
 type InputLength = Word64
 
 foreign import ccall "extism_output_set" extismSetOutput :: MemoryOffset -> MemoryLength -> IO ()

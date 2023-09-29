@@ -1,3 +1,5 @@
+-- |
+-- Extism plugin development kit, used with the wasm32-wasi-ghc backend to make Extism plugins
 module Extism.PDK
   ( module Extism.PDK,
     ToBytes (..),

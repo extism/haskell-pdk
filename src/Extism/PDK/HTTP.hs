@@ -1,3 +1,5 @@
+-- |
+-- Contains bindings to the Extism PDK HTTP interface
 module Extism.PDK.HTTP where
 
 import Data.ByteString as B
@@ -60,6 +62,7 @@ responseJSON (Response _ mem) = do
     Ok json -> return $ Right json
     Extism.JSON.Error msg -> return (Left msg)
 
+-- | Get the 'Response' body and decode it
 response :: (FromBytes a) => Response -> IO (Either String a)
 response (Response _ mem) = load mem
 

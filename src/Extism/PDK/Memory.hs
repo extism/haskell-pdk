@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 
+-- |
+-- Extism.PDK.Memory implements a low-level interface for interacting with Extism memory
 module Extism.PDK.Memory
   ( Memory (..),
     MemoryOffset,

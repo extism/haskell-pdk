@@ -1,6 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 
+-- |
+-- Provides the ability to use MessagePack for plugin input/output
 module Extism.PDK.MsgPack
   ( module Extism.PDK.MsgPack,
     module Data.MessagePack,
