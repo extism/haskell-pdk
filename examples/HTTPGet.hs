@@ -1,12 +1,12 @@
 module HTTPGet where
 
+import Data.Int
 import Extism.PDK
 import Extism.PDK.HTTP
 import Extism.PDK.Memory
-import Data.Int
 
 getInput = do
-  req <- input
+  req <- tryInput
   case req of
     Right (JSONValue x) -> return x
     Left e -> do
