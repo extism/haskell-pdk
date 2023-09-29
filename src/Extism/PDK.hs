@@ -1,6 +1,5 @@
 module Extism.PDK
   ( module Extism.PDK,
-    module Extism.Manifest,
     ToBytes (..),
     FromBytes (..),
     JSONValue (..),
@@ -9,11 +8,6 @@ module Extism.PDK
 where
 
 import Data.ByteString as B
-import Data.ByteString.Unsafe (unsafeUseAsCString)
-import Data.Int
-import Data.Word
-import Extism.JSON (JSON, JSValue)
-import Extism.Manifest (toString)
 import Extism.PDK.Bindings
 import Extism.PDK.Memory
 import qualified Extism.PDK.MsgPack (MsgPack, decode, encode)
@@ -56,7 +50,7 @@ output x = do
 -- | Set plugin output to a JSON encoded version of the provided value
 outputJSON :: (JSON a) => a -> IO ()
 outputJSON x =
-  output (toString x)
+  output (encode x)
 
 -- | Get a variable from the Extism runtime
 getVar :: (FromBytes a) => String -> IO (Maybe a)

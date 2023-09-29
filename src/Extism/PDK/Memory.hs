@@ -44,10 +44,10 @@ load (Memory offs len) = do
   return $ fromBytes x
 
 -- | Store data into a 'Memory' block
--- store :: (ToBytes a) => Memory -> a -> IO ()
--- store (Memory offs len) a =
---   let bs = toBytes a
---    in writeBytes offs len bs
+store :: (ToBytes a) => Memory -> a -> IO ()
+store (Memory offs len) a =
+  let bs = toBytes a
+   in writeBytes offs len bs
 
 -- | Set plugin output to the provided 'Memory' block
 outputMemory :: Memory -> IO ()
@@ -65,10 +65,15 @@ loadString (Memory offs len) =
   fromByteString <$> readBytes offs len
 
 -- | Store string in 'Memory' block
--- storeString :: Memory -> String -> IO ()
--- storeString mem s =
---   let bs = toByteString s
---    in store mem bs
+storeString :: Memory -> String -> IO ()
+storeString mem s =
+  let bs = toByteString s
+   in storeByteString mem bs
+
+-- | Store byte string in 'Memory' block
+storeByteString :: Memory -> B.ByteString -> IO ()
+storeByteString (Memory offs len) =
+  writeBytes offs len
 
 -- | Encode a value and copy it into Extism memory, returning the Memory block
 alloc :: (ToBytes a) => a -> IO Memory

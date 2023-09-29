@@ -6,7 +6,7 @@ version:            0.2.0.0
 synopsis: Extism Plugin Development Kit
 
 -- A longer description of the package.
-description: Haskell bindings to the Extism runtime
+description: Haskell bindings to the Extism runtime for use with wasm32-wasi-ghc
 
 -- A URL where users can report bugs.
 bug-reports: https://github.com/extism/haskell-pdk
