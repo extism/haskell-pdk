@@ -22,9 +22,7 @@ import Text.JSON (JSON, decode, encode, resultToEither)
 
 -- | Get plugin input
 input :: (FromBytes a) => IO (Either String a)
-input = do
-  len <- extismInputLength
-  fromBytes <$> readInputBytes len
+input = fromBytes <$> inputByteString
 
 -- | Get plugin input as a String
 inputString :: IO String
@@ -51,13 +49,9 @@ inputJSON = do
 
 -- | Set plugin output
 output :: (ToBytes a) => a -> IO ()
-output x =
-  let bs = toBytes x
-   in let len = fromIntegral $ B.length bs
-       in do
-            offs <- extismAlloc len
-            b <- store (Memory offs len) bs
-            extismSetOutput offs len
+output x = do
+  Memory offs len <- alloc x
+  extismSetOutput offs len
 
 -- | Set plugin output to a JSON encoded version of the provided value
 outputJSON :: (JSON a) => a -> IO ()
@@ -88,7 +82,7 @@ setVar key Nothing = do
   free k
 setVar key (Just v) = do
   k <- allocString key
-  x <- allocBytes v
+  x <- alloc v
   extismSetVar (memoryOffset k) (memoryOffset x)
   free k
   free x

@@ -8,7 +8,8 @@ getInput = do
   req <- input
   case req of
     Right (JSONValue x) -> return x
-    Left _ -> do
+    Left e -> do
+      putStrLn e
       url <- inputString
       return $ newRequest url
 
@@ -16,7 +17,7 @@ httpGet = do
   -- Get URL or JSON encoded request from host
   req <- getInput
   -- Send the request, get a 'Response'
-  res <- sendRequest req Nothing
+  res <- sendRequest req (Nothing :: Maybe String)
   -- Save response body to memory
   outputMemory (memory res)
 

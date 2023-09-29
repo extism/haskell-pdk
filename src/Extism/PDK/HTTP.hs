@@ -60,13 +60,32 @@ responseJSON (Response _ mem) = do
     Ok json -> return $ Right json
     Extism.JSON.Error msg -> return (Left msg)
 
+response :: (FromBytes a) => Response -> IO (Either String a)
+response (Response _ mem) = load mem
+
 -- | Send HTTP request with an optional request body
-sendRequest :: Request -> Maybe ByteString -> IO Response
+sendRequestWithBody :: (ToBytes a) => Request -> a -> IO Response
+sendRequestWithBody req b = do
+  body <- alloc b
+  let json = Extism.Manifest.toString req
+  j <- allocString json
+  res <- extismHTTPRequest (memoryOffset j) (memoryOffset body)
+  free j
+  free body
+  code <- extismHTTPStatusCode
+  if res == 0
+    then return (Response (fromIntegral code) (Memory 0 0))
+    else do
+      mem <- findMemory res
+      return (Response (fromIntegral code) mem)
+
+-- | Send HTTP request with an optional request body
+sendRequest :: (ToBytes a) => Request -> Maybe a -> IO Response
 sendRequest req b =
   let json = Extism.Manifest.toString req
    in let bodyMem = case b of
             Nothing -> return $ Memory 0 0
-            Just b -> allocBytes b
+            Just b -> alloc b
        in do
             body <- bodyMem
             j <- allocString json
