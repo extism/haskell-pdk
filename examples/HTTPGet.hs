@@ -3,6 +3,7 @@ module HTTPGet where
 import Extism.PDK
 import Extism.PDK.HTTP
 import Extism.PDK.Memory
+import Data.Int
 
 getInput = do
   req <- input
@@ -20,5 +21,7 @@ httpGet = do
   res <- sendRequest req (Nothing :: Maybe String)
   -- Save response body to memory
   outputMemory (memory res)
+  -- Return code
+  return 0
 
-foreign export ccall "http_get" httpGet :: IO ()
+foreign export ccall "http_get" httpGet :: IO Int32
