@@ -13,6 +13,7 @@ clean:
 	cabal clean
 
 publish: clean
+	cabal update
 	cabal v2-haddock --haddock-for-hackage
 	cabal sdist
 
