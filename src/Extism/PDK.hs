@@ -1,3 +1,5 @@
+{-# LANGUAGE Rank2Types #-}
+
 -- |
 -- Extism plugin development kit, used with the [wasm32-wasi-ghc](https://gitlab.haskell.org/ghc/ghc-wasm-meta) backend to make Extism plugins
 module Extism.PDK
@@ -16,9 +18,18 @@ import qualified Extism.PDK.MsgPack (MsgPack, decode, encode)
 import Extism.PDK.Util
 import Text.JSON (JSON, decode, encode, resultToEither)
 
+-- | Get plugin input, returning an error message if the encoding is invalid
+tryInput :: (FromBytes a) => IO (Either String a)
+tryInput = fromBytes <$> inputByteString
+
 -- | Get plugin input
-input :: (FromBytes a) => IO (Either String a)
-input = fromBytes <$> inputByteString
+input :: forall a. (FromBytes a) => IO a
+input = do
+  i <- inputByteString
+  let x = fromBytes i
+  case x of
+    Left e -> error e
+    Right y -> return y
 
 -- | Get plugin input as a String
 inputString :: IO String
@@ -35,7 +46,7 @@ inputByteString = do
 -- | Get input as 'JSON', this is similar to calling `input (JsonValue ...)`
 inputJSON :: (JSON a) => IO (Either String a)
 inputJSON = do
-  s <- input :: IO (Either String String)
+  s <- tryInput :: IO (Either String String)
   case s of
     Left e -> return (Left e)
     Right x ->
