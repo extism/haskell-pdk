@@ -74,8 +74,7 @@ bsToWord64 (BS fp len) =
     else
       withForeignPtr
         fp
-        ( \p ->
-            peek $ castPtr @Word8 @Word64 p
+        ( peek . castPtr @Word8 @Word64
         )
 
 word64ToBS :: Word64 -> ByteString
@@ -132,5 +131,5 @@ writeBytesLoop index total src =
             writeBytesLoop (index + n) total sub
 
 writeBytes :: MemoryOffset -> MemoryLength -> ByteString -> IO ()
-writeBytes offs len src =
-  writeBytesLoop offs (offs + len) src
+writeBytes offs len =
+  writeBytesLoop offs (offs + len)

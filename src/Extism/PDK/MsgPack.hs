@@ -8,6 +8,7 @@ module Extism.PDK.MsgPack
   )
 where
 
+import Data.Bifunctor (bimap)
 import qualified Data.ByteString as B
 import Data.ByteString.Internal (c2w, w2c)
 import Data.Int
@@ -50,7 +51,7 @@ toByteString x = B.pack (Prelude.map c2w x)
 fromByteString bs = Prelude.map w2c $ B.unpack bs
 
 instance MsgPack Bool where
-  toMsgPack b = ObjectBool b
+  toMsgPack = ObjectBool
   fromMsgPack (ObjectBool b) = Just b
   fromMsgPack _ = Nothing
 
@@ -60,7 +61,7 @@ instance MsgPack String where
   fromMsgPack _ = Nothing
 
 instance MsgPack B.ByteString where
-  toMsgPack s = ObjectBinary s
+  toMsgPack = ObjectBinary
   fromMsgPack (ObjectString s) = Just s
   fromMsgPack (ObjectBinary s) = Just s
   fromMsgPack _ = Nothing
@@ -71,7 +72,7 @@ instance MsgPack Int where
   fromMsgPack _ = Nothing
 
 instance MsgPack Int64 where
-  toMsgPack i = ObjectInt i
+  toMsgPack = ObjectInt
   fromMsgPack (ObjectInt i) = Just i
   fromMsgPack _ = Nothing
 
@@ -81,14 +82,14 @@ instance MsgPack Word where
   fromMsgPack _ = Nothing
 
 instance MsgPack Word64 where
-  toMsgPack w = ObjectUInt w
+  toMsgPack = ObjectUInt
   fromMsgPack (ObjectUInt x) = Just x
   fromMsgPack _ = Nothing
 
 instance (MsgPack a) => MsgPack (Maybe a) where
   toMsgPack Nothing = ObjectNil
   toMsgPack (Just a) = toMsgPack a
-  fromMsgPack bs = fromMsgPack bs
+  fromMsgPack = fromMsgPack
 
 instance MsgPack () where
   toMsgPack () = ObjectNil
@@ -96,18 +97,18 @@ instance MsgPack () where
   fromMsgPack _ = Nothing
 
 instance MsgPack Float where
-  toMsgPack f = ObjectFloat f
+  toMsgPack = ObjectFloat
   fromMsgPack (ObjectFloat f) = Just f
   fromMsgPack _ = Nothing
 
 instance MsgPack Double where
-  toMsgPack d = ObjectDouble d
+  toMsgPack = ObjectDouble
   fromMsgPack (ObjectDouble d) = Just d
   fromMsgPack _ = Nothing
 
 instance MsgPack Object where
   toMsgPack x = x
-  fromMsgPack x = Just x
+  fromMsgPack = Just
 
 (.=) :: (MsgPack a) => (MsgPack b) => a -> b -> (Object, Object)
 (.=) k v = (toMsgPack k, toMsgPack v)
@@ -115,9 +116,7 @@ instance MsgPack Object where
 lookup :: (MsgPack a) => (MsgPack b) => a -> Object -> Maybe b
 lookup k (ObjectMap map) =
   let x = Map.lookup (toMsgPack k) map
-   in case x of
-        Nothing -> Nothing
-        Just x -> fromMsgPack x
+   in fromMsgPack =<< x
 lookup _ _ = Nothing
 
 set k v (ObjectMap map) =
@@ -127,7 +126,7 @@ set k v (ObjectMap map) =
 (.?) a b = Extism.PDK.MsgPack.lookup b a
 
 object :: (MsgPack a) => (MsgPack b) => [(a, b)] -> Object
-object l = ObjectMap (Map.fromList $ map (\(k, v) -> (toMsgPack k, toMsgPack v)) l)
+object l = ObjectMap (Map.fromList $ map (bimap toMsgPack toMsgPack) l)
 
 array :: (MsgPack a) => [a] -> Object
 array l = ObjectArray (map toMsgPack l)
