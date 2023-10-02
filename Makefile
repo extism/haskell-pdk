@@ -9,6 +9,9 @@ build:
 %.example: build
 	cp `find dist-newstyle/build/wasm32-wasi/ -name $*.wasm` ./$*.wasm
 
+test:
+	extism call ./hello.wasm testing --wasi --input "World" --config greeting="Hello"
+
 clean:
 	cabal clean
 

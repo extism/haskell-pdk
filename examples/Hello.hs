@@ -2,7 +2,6 @@ module Hello where
 
 import Data.Maybe
 import Extism.PDK
-import Foreign.C.Types
 
 defaultGreeting = "Hello"
 
