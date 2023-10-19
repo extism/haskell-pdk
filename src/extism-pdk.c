@@ -5,7 +5,7 @@
 typedef uint64_t ExtismPointer;
 
 #define DEFINE(name, t, ...)                                                   \
-  IMPORT("extism:env", #name) extern t _##name(__VA_ARGS__);
+  IMPORT("extism:host/env", #name) extern t _##name(__VA_ARGS__);
 
 DEFINE(input_length, uint64_t)
 uint64_t extism_input_length() { return _input_length(); }
