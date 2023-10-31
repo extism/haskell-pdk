@@ -57,6 +57,8 @@ greet = do
 foreign export ccall "greet" greet:: IO Int32
 ```
 
+This example also shows how to use the `getConfig` function to load runtime configuration values set by the host.
+
 Despite not needing any system access for this plugin, we will still compile it for `wasm32-wasi`, since there is no Haskell compiler targeting `wasm32-unknown-unknown`:
 
 ```bash
@@ -75,6 +77,13 @@ command:
 ```bash
 extism call ./example.wasm greet --input "Benjamin"
 # => Hello, Benjamin!
+```
+
+Configure a new greeting we can update the `greeting` config key using the [Extism CLI](https://github.com/extism/cli)'s `--config` option that lets you pass in `key=value` pairs:
+
+```bash
+extism call ./example.wasm greet --input "Benjamin" --config greeting="Hi there"
+# => Hi there, Benjamin!
 ```
 
 > **Note**: We also have a web-based, plug-in tester called the [Extism Playground](https://playground.extism.org/)
@@ -133,42 +142,38 @@ processString = do
 We provide a [JSON](https://hackage.haskell.org/package/extism-manifest-0.3.0/docs/Extism-JSON.html) class that allows you to pass JSON encoded values into 
 and out of plug-in functions:
 
-```rust
-#[derive(serde::Deserialize)]
-struct Add {
-    a: u32,
-    b: u32,
-}
-#[derive(serde::Serialize)]
-struct Sum {
-    sum: u32,
-}
+```haskell
+data Add = Add
+  { a :: Int,
+    b :: Int
+  }
 
-#[plugin_fn]
-pub fn add(Json(add): Json<Add>) -> FnResult<Json<Sum>> {
-    let sum = Sum { sum: add.a + add.b };
-    Ok(Json(sum))
-}
-```
+data Sum = Sum
+  { sum :: Int
+  }
 
-## Configs
+instance JSON Add where
+  showJSON (Add a' b') =
+    object ["a" .= a', "b" .= b']
 
-Configs are key-value pairs that can be passed in by the host when creating a
-plug-in. These can be useful to statically configure the plug-in with some data that exists across every function call. Here is a trivial example:
+  readJSON obj =
+    let a = fromNotNull $ obj .? "a"
+     in let b = fromNotNull $ obj .? "b"
+         in Ok (Add a b)
 
-```rust
-#[plugin_fn]
-pub fn greet() -> FnResult<String> {
-    let user = config::get("user").expect("'user' key set in config");
-    Ok(format!("Hello, {}!", user))
-}
-```
+instance JSON Sum where
+  showJSON (Sum x) =
+    object ["sum" .= x]
 
-To test it, the [Extism CLI](https://github.com/extism/cli) has a `--config` option that lets you pass in `key=value` pairs:
+  readJSON obj =
+    let x = fromNotNull $ obj .? "sum"
+     in Ok (Sum x)
 
-```bash
-extism call my_plugin.wasm greet --config user=Benjamin
-# => Hello, Benjamin!
+add = do
+  -- Get float value
+  JSONValue value <- (input :: IO (JSONValue Add))
+  outputJSON $ Sum (a value + b value)
+  return 0
 ```
 
 ## Variables
