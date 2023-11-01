@@ -8,8 +8,8 @@ module Extism.PDK.Memory
     MemoryLength,
     FromBytes (..),
     ToBytes (..),
-    JSONValue (..),
-    MsgPackValue (..),
+    JSON (..),
+    MsgPack (..),
     load,
     loadString,
     loadByteString,
@@ -34,7 +34,8 @@ import Data.Word
 import Extism.PDK.Bindings
 import qualified Extism.PDK.MsgPack (MsgPack, decode, encode)
 import Extism.PDK.Util
-import Text.JSON (JSON, decode, encode, resultToEither)
+import qualified Text.JSON (JSON, Result (..), decode, encode)
+import qualified Text.JSON.Generic
 
 -- | Represents a block of memory by offset and length
 data Memory = Memory MemoryOffset MemoryLength
@@ -135,10 +136,10 @@ class ToBytes a where
   toBytes :: a -> B.ByteString
 
 -- | A wrapper type for JSON encoded values
-newtype JSONValue a = JSONValue a
+newtype JSON a = JSON a
 
 -- | A wrapper type for MsgPack encoded values
-newtype MsgPackValue a = MsgPackValue a
+newtype MsgPack a = MsgPack a
 
 instance FromBytes B.ByteString where
   fromBytes = Right
@@ -156,20 +157,23 @@ instance FromBytes String where
 instance ToBytes String where
   toBytes = toByteString
 
-instance (JSON a) => FromBytes (JSONValue a) where
+instance (Text.JSON.Generic.Data a) => FromBytes (JSON a) where
   fromBytes mem =
     let a = fromBytes mem
      in case a of
           Left e -> Left e
           Right x ->
-            case resultToEither $ decode x of
-              Left e -> Left e
-              Right y -> Right (JSONValue y)
+            case Text.JSON.decode x of
+              Text.JSON.Error e -> Left e
+              Text.JSON.Ok y ->
+                case Text.JSON.Generic.fromJSON y of
+                  Text.JSON.Error e -> Left e
+                  Text.JSON.Ok z -> Right (JSON z)
 
-instance (JSON a) => ToBytes (JSONValue a) where
-  toBytes (JSONValue x) = toBytes (encode x)
+instance (Text.JSON.Generic.Data a) => ToBytes (JSON a) where
+  toBytes (JSON x) = toBytes (Text.JSON.Generic.encodeJSON x)
 
-instance (Extism.PDK.MsgPack.MsgPack a) => FromBytes (MsgPackValue a) where
+instance (Extism.PDK.MsgPack.MsgPack a) => FromBytes (MsgPack a) where
   fromBytes mem =
     let a = fromBytes mem
      in case a of
@@ -177,10 +181,10 @@ instance (Extism.PDK.MsgPack.MsgPack a) => FromBytes (MsgPackValue a) where
           Right x ->
             case Extism.PDK.MsgPack.decode x of
               Left e -> Left e
-              Right y -> Right (MsgPackValue y)
+              Right y -> Right (MsgPack y)
 
-instance (Extism.PDK.MsgPack.MsgPack a) => ToBytes (MsgPackValue a) where
-  toBytes (MsgPackValue x) = toBytes $ Extism.PDK.MsgPack.encode x
+instance (Extism.PDK.MsgPack.MsgPack a) => ToBytes (MsgPack a) where
+  toBytes (MsgPack x) = toBytes $ Extism.PDK.MsgPack.encode x
 
 instance ToBytes Int32 where
   toBytes i = toBytes $ B.toStrict (runPut (putInt32le i))

@@ -143,53 +143,43 @@ We provide a [JSON](https://hackage.haskell.org/package/extism-manifest-0.3.0/do
 and out of plug-in functions:
 
 ```haskell
+{-# LANGUAGE DeriveDataTypeable #-}
+
+module Add where
+import Extism.PDK
+import Extism.PDK.JSON
+
 data Add = Add
   { a :: Int,
     b :: Int
   }
+  deriving (Typeable, Data)
 
 data Sum = Sum
   { sum :: Int
   }
-
-instance JSON Add where
-  showJSON (Add a' b') =
-    object ["a" .= a', "b" .= b']
-
-  readJSON obj =
-    let a = fromNotNull $ obj .? "a"
-     in let b = fromNotNull $ obj .? "b"
-         in Ok (Add a b)
-
-instance JSON Sum where
-  showJSON (Sum x) =
-    object ["sum" .= x]
-
-  readJSON obj =
-    let x = fromNotNull $ obj .? "sum"
-     in Ok (Sum x)
+  deriving (Typeable, Data)
 
 add = do
-  -- Get float value
-  JSONValue value <- (input :: IO (JSONValue Add))
-  outputJSON $ Sum (a value + b value)
+  value <- input
+  output $ JSON $ Sum (a value + b value)
   return 0
+
+foreign export ccall "add" add :: IO Int32
 ```
 
 ## Variables
 
 Variables are another key-value mechanism but it's a mutable data store that
 will persist across function calls. These variables will persist as long as the
-host has loaded and not freed the plug-in. You can use [var::get](https://docs.rs/extism-pdk/latest/extism_pdk/var/fn.get.html) and [var::set](https://docs.rs/extism-pdk/latest/extism_pdk/var/fn.set.html) to manipulate them.
+host has loaded and not freed the plug-in. You can use [getVar](https://hackage.haskell.org/package/extism-pdk-0.2.0.0/docs/Extism-PDK.html#v:getVar) and [setVar](https://hackage.haskell.org/package/extism-pdk-0.2.0.0/docs/Extism-PDK.html#v:setVar) to manipulate them.
 
-```rust
-#[plugin_fn]
-pub fn count() -> FnResult<i64> {
-    let mut c = var::get("count")?.unwrap_or(0);
-    c = c + 1;
-    var::set("count", c)?;
-    Ok(c)
-}
+```haskell
+count = do
+  c <- fromMaybe 0 <$> getVar "count"
+  setVar "count" (c + 1)
+  output c
+  return 0
 ```
 
 ## Logging

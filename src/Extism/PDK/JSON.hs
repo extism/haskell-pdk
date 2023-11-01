@@ -1,7 +1,9 @@
 module Extism.PDK.JSON
   ( module Extism.PDK.JSON,
     module Extism.JSON,
+    module Text.JSON.Generic,
   )
 where
 
-import Extism.JSON
+import qualified Extism.JSON
+import Text.JSON.Generic
