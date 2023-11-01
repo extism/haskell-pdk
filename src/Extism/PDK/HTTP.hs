@@ -6,10 +6,12 @@ module Extism.PDK.HTTP where
 
 import Data.ByteString as B
 import Data.Word
-import Extism.JSON (JSON, JSValue, Nullable (..), Result (..), decode)
+import Extism.JSON (JSValue, Nullable (..), Result (..))
+import qualified Extism.Manifest (HTTPRequest (..))
 import Extism.PDK
 import Extism.PDK.Bindings
 import Extism.PDK.Memory
+import Text.JSON (decode, encode, makeObj)
 import qualified Text.JSON.Generic
 
 -- | HTTP Request
@@ -18,7 +20,7 @@ data Request = Request
     headers :: [(String, String)],
     method :: String
   }
-  deriving (Eq, Show, Text.JSON.Generic.Data, Text.JSON.Generic.Typeable)
+  deriving (Text.JSON.Generic.Typeable, Text.JSON.Generic.Data)
 
 -- | HTTP Response
 data Response = Response
@@ -29,11 +31,7 @@ data Response = Response
 -- | Creates a new 'Request'
 newRequest :: String -> Request
 newRequest url =
-  Request
-    { url = url,
-      headers = [],
-      method = "GET"
-    }
+  Request url [] "GET"
 
 -- | Update a 'Request' with the provided HTTP request method (GET, POST, PUT, DELETE, ...)
 withMethod :: String -> Request -> Request
@@ -80,7 +78,13 @@ response (Response _ mem) = load mem
 sendRequestWithBody :: (ToBytes a) => Request -> a -> IO Response
 sendRequestWithBody req b = do
   body <- alloc b
-  let json = Text.JSON.Generic.encodeJSON req
+  let json =
+        encode
+          Extism.Manifest.HTTPRequest
+            { Extism.Manifest.url = url req,
+              Extism.Manifest.headers = NotNull $ headers req,
+              Extism.Manifest.method = NotNull $ method req
+            }
   j <- allocString json
   res <- extismHTTPRequest (memoryOffset j) (memoryOffset body)
   free j
@@ -95,7 +99,13 @@ sendRequestWithBody req b = do
 -- | Send HTTP request with an optional request body
 sendRequest :: (ToBytes a) => Request -> Maybe a -> IO Response
 sendRequest req b =
-  let json = Text.JSON.Generic.encodeJSON req
+  let json =
+        encode
+          Extism.Manifest.HTTPRequest
+            { Extism.Manifest.url = url req,
+              Extism.Manifest.headers = NotNull $ headers req,
+              Extism.Manifest.method = NotNull $ method req
+            }
    in let bodyMem = case b of
             Nothing -> return $ Memory 0 0
             Just b -> alloc b
