@@ -2,13 +2,7 @@
 
 This library can be used to write [Extism Plug-ins](https://extism.org/docs/concepts/plug-in) in Haskell.
 
-## Notes
-
-- If you're geting linker errors about undefined Extism functions when compiling a plugin then the following 
-  arguments need to be passed to GHC: `-optl -Wl,--allow-undefined`
-  (see [cabal.project](https://github.com/extism/haskell-pdk/tree/main/cabal.project))
-- Functions can be exported using `foreign export` - for a function named `myFunction` you should also pass the
-  following to GHC: `-optl -Wl,--export=myFunction`
+Docs are available on Hackage: [https://hackage.haskell.org/package/extism-pdk](https://hackage.haskell.org/package/extism-pdk)
 
 ## Install
 
@@ -107,7 +101,7 @@ This will export the `greet` function, the `hs_init` function and compile a reac
 
 ### Primitive Types
 
-A common thing you may want to do is pass some primitive Rust data back and forth.
+A common thing you may want to do is pass some primitive Haskell data back and forth.
 
 ```haskell
 -- Float
@@ -172,7 +166,7 @@ foreign export ccall "add" add :: IO Int32
 
 Variables are another key-value mechanism but it's a mutable data store that
 will persist across function calls. These variables will persist as long as the
-host has loaded and not freed the plug-in. You can use [getVar](https://hackage.haskell.org/package/extism-pdk-0.2.0.0/docs/Extism-PDK.html#v:getVar) and [setVar](https://hackage.haskell.org/package/extism-pdk-0.2.0.0/docs/Extism-PDK.html#v:setVar) to manipulate them.
+host has loaded and not freed the plug-in. You can use [getVar](https://hackage.haskell.org/package/extism-pdk-0.2.0.0/docs/Extism-PDK.html#v:getVar) and [setVar](https://hackage.haskell.org/package/extism-pdk/docs/Extism-PDK.html#v:setVar) to manipulate them.
 
 ```haskell
 count = do
@@ -184,28 +178,23 @@ count = do
 
 ## Logging
 
-Because Wasm modules by default do not have access to the system, printing to stdout won't work (unless you use WASI). Extism provides some simple logging macros that allow you to use the host application to log without having to give the plug-in permission to make syscalls. The primary one is [log!](https://docs.rs/extism-pdk/latest/extism_pdk/macro.log.html) but we also have some convenience macros named by log level:
+Because Wasm modules by default do not have access to the system, printing to stdout won't work (unless you use WASI). Extism provides some simple logging macros that allow you to use the host application to log without having to give the plug-in permission to make syscalls:
 
-```rust
-#[plugin_fn]
-pub fn log_stuff() -> FnResult<()> {
-    log!(LogLevel::Info, "Some info!");
-    log!(LogLevel::Warn, "A warning!");
-    log!(LogLevel::Error, "An error!");
-
-    // optionally you can use the leveled macros: 
-    info!("Some info!");
-    warn!("A warning!");
-    error!("An error!");
-
-    Ok(())
-}
+```haskell
+module Log where
+import Extism.PDK
+logStuff = do
+  logInfo "Some info!"
+  logWarn "A warning!"
+  logError "An error!" 
+  return 0
+foreign export ccall "logStuff" logStuff:: IO Int32
 ```
 
 From [Extism CLI](https://github.com/extism/cli):
 
 ```bash
-extism call my_plugin.wasm log_stuff --log-level=info
+extism call my_plugin.wasm logStuff --log-level=info
 2023/09/30 11:52:17 Some info!
 2023/09/30 11:52:17 A warning!
 2023/09/30 11:52:17 An error!
@@ -217,21 +206,34 @@ extism call my_plugin.wasm log_stuff --log-level=info
 
 Sometimes it is useful to let a plug-in make HTTP calls.
 
-> **Note**: See [HttpRequest](https://docs.rs/extism-pdk/latest/extism_pdk/struct.HttpRequest.html) docs for more info on the request and response types:
+> **Note**: See [Request](https://hackage.haskell.org/package/extism-pdk/docs/Extism-PDK-HTTP.html#t:Request) docs for more info on the request and response types:
 
-```rust
-#[plugin_fn]
-pub fn http_get(Json(req): Json<HttpRequest>) -> FnResult<HttpResponse> {
-    let res = http::request::<()>(&req, None)?;
-    Ok(res)
-}
+```haskell
+ module HTTPGet where
+
+import Data.Int
+import Extism.PDK
+import Extism.PDK.HTTP
+import Extism.PDK.Memory
+
+httpGet = do
+  -- Get JSON encoded request from host
+  JSON req <- input
+  -- Send the request, get a 'Response'
+  res <- sendRequest req (Nothing :: Maybe String)
+  -- Save response body to memory
+  outputMemory (memory res)
+  -- Return code
+  return 0
+
+foreign export ccall "httpGet" httpGet :: IO Int32
 ```
 
 ## Imports (Host Functions)
 
 Like any other code module, Wasm not only let's you export functions to the outside world, you can
 import them too. Host Functions allow a plug-in to import functions defined in the host. For example,
-if you host application is written in Python, it can pass a Python function down to your Rust plug-in
+if you host application is written in Python, it can pass a Python function down to your Haskell plug-in
 where you can invoke it.
 
 This topic can get fairly complicated and we have not yet fully abstracted the Wasm knowledge you need
@@ -239,34 +241,40 @@ to do this correctly. So we recommend reading out [concept doc on Host Functions
 
 ### A Simple Example
 
-Host functions have a similar interface as exports. You just need to declare them as `extern` on the top of your `lib.rs`. You only declare the interface as it is the host's responsibility to provide the implementation:
+Host functions in the Haskell PDK require C stubs to import a function from a particular namespace:
 
-```rust
-#[host_fn]
-extern "ExtismHost" {
-    fn a_python_func(input: String) -> String; 
+```c
+#define IMPORT(a, b) __attribute__((import_module(a), import_name(b)))
+IMPORT("extism:host/user", "a_python_func")
+uint64_t a_python_func_impl(uint64_t input);
+
+uint64_t a_python_func(uint64_t input) {
+  return a_python_func_impl(input);
 }
 ```
 
-To declare a host function in a specific namespace, pass the module name to the `host_fn` macro:
+This C file should be added to the `extra-source-files` and `c-sources` fields in your cabal file.
 
-```rust
-#[host_fn("extism:host/user")]
+From there we can use `foreign import ccall` to call our stub:
+
+```haskell
+import Extism.PDK.Memory
+import Extism.PDK
+
+foreign import ccall "a_python_func" aPythonFunc :: Word64 -> IO Word64
+
+helloFromPython :: String -> IO String
+helloFromPython = do
+  s' <- allocString "Hello!"
+  res <- aPythonFunc (memoryOffset s')
+  logInfo <$> loadString res
+  return 0
+
+foreign export ccall "helloFromPython" helloFromPython :: IO Int32
 ```
 
-> **Note**: The types we accept here are the same as the exports as the interface also uses the [convert crate](https://docs.rs/extism-convert/latest/extism_convert/).
-
-To call this function, we must use the `unsafe` keyword. Also note that it automatically wraps the
-function return with a Result in case the call fails.
-
-
-```rust
-#[plugin_fn]
-pub fn hello_from_python() -> FnResult<String> {
-    let output = unsafe { a_python_func("An argument to send to Python".into())? };
-    Ok(output)
-}
-```
+To call this function, we write our input string into memory using `allocString` and call the function with the returned memory handle. We then have
+to load the result string from memory to access it from our Haskell program.
 
 ### Testing it out
 
@@ -307,7 +315,7 @@ functions = [
 ]
 
 plugin = Plugin(manifest, functions=functions)
-result = plugin.call('hello_from_python')
+result = plugin.call('helloFromPython')
 print(result)
 ```
 

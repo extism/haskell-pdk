@@ -110,23 +110,39 @@ setError msg = do
   extismSetError $ memoryOffset s
 
 -- | Log level
-data LogLevel = Info | Debug | Warn | Error
+data LogLevel = LogInfo | LogDebug | LogWarn | LogError
 
 -- | Log to configured log file
 log :: LogLevel -> String -> IO ()
-log Info msg = do
+log LogInfo msg = do
   s <- allocString msg
   extismLogInfo (memoryOffset s)
   free s
-log Debug msg = do
+log LogDebug msg = do
   s <- allocString msg
   extismLogDebug (memoryOffset s)
   free s
-log Warn msg = do
+log LogWarn msg = do
   s <- allocString msg
   extismLogWarn (memoryOffset s)
   free s
-log Extism.PDK.Error msg = do
+log LogError msg = do
   s <- allocString msg
   extismLogError (memoryOffset s)
   free s
+
+-- Log with "error" level
+logError :: String -> IO ()
+logError = Extism.PDK.log LogError
+
+-- Log with "info" level
+logInfo :: String -> IO ()
+logInfo = Extism.PDK.log LogInfo
+
+-- Log with "debug" level
+logDebug :: String -> IO ()
+logDebug = Extism.PDK.log LogDebug
+
+-- Log with "warn" level
+logWarn :: String -> IO ()
+logWarn = Extism.PDK.log LogWarn
