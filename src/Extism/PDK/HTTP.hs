@@ -1,17 +1,26 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 -- |
 -- Contains bindings to the Extism PDK HTTP interface
 module Extism.PDK.HTTP where
 
 import Data.ByteString as B
 import Data.Word
-import Extism.JSON (JSON, Nullable (..), Result (..), decode)
-import Extism.Manifest (HTTPRequest (..), headers, method, toString, url)
+import Extism.JSON (JSValue, Nullable (..), Result (..))
+import qualified Extism.Manifest (HTTPRequest (..))
 import Extism.PDK
 import Extism.PDK.Bindings
 import Extism.PDK.Memory
+import Text.JSON (decode, encode, makeObj)
+import qualified Text.JSON.Generic
 
 -- | HTTP Request
-type Request = HTTPRequest
+data Request = Request
+  { url :: String,
+    headers :: [(String, String)],
+    method :: String
+  }
+  deriving (Text.JSON.Generic.Typeable, Text.JSON.Generic.Data)
 
 -- | HTTP Response
 data Response = Response
@@ -22,21 +31,17 @@ data Response = Response
 -- | Creates a new 'Request'
 newRequest :: String -> Request
 newRequest url =
-  HTTPRequest
-    { url = url,
-      headers = Null,
-      method = Null
-    }
+  Request url [] "GET"
 
 -- | Update a 'Request' with the provided HTTP request method (GET, POST, PUT, DELETE, ...)
 withMethod :: String -> Request -> Request
 withMethod meth req =
-  req {method = NotNull meth}
+  req {method = meth}
 
 -- | Update a 'Request' with the provided HTTP request headers
 withHeaders :: [(String, String)] -> Request -> Request
 withHeaders h req =
-  req {headers = NotNull h}
+  req {headers = h}
 
 -- | Access the Memory block associated with a 'Response'
 responseMemory :: Response -> Memory
@@ -55,11 +60,14 @@ responseString :: Response -> IO String
 responseString (Response _ mem) = loadString mem
 
 -- | Get the 'Response' body as JSON
-responseJSON :: (JSON a) => Response -> IO (Either String a)
+responseJSON :: (Text.JSON.Generic.Data a) => Response -> IO (Either String a)
 responseJSON (Response _ mem) = do
   json <- decode <$> loadString mem
   case json of
-    Ok json -> return $ Right json
+    Extism.JSON.Ok json ->
+      case Text.JSON.Generic.fromJSON json of
+        Extism.JSON.Ok x -> return $ Right x
+        Extism.JSON.Error msg -> return (Left msg)
     Extism.JSON.Error msg -> return (Left msg)
 
 -- | Get the 'Response' body and decode it
@@ -70,7 +78,13 @@ response (Response _ mem) = load mem
 sendRequestWithBody :: (ToBytes a) => Request -> a -> IO Response
 sendRequestWithBody req b = do
   body <- alloc b
-  let json = Extism.Manifest.toString req
+  let json =
+        encode
+          Extism.Manifest.HTTPRequest
+            { Extism.Manifest.url = url req,
+              Extism.Manifest.headers = NotNull $ headers req,
+              Extism.Manifest.method = NotNull $ method req
+            }
   j <- allocString json
   res <- extismHTTPRequest (memoryOffset j) (memoryOffset body)
   free j
@@ -85,7 +99,13 @@ sendRequestWithBody req b = do
 -- | Send HTTP request with an optional request body
 sendRequest :: (ToBytes a) => Request -> Maybe a -> IO Response
 sendRequest req b =
-  let json = Extism.Manifest.toString req
+  let json =
+        encode
+          Extism.Manifest.HTTPRequest
+            { Extism.Manifest.url = url req,
+              Extism.Manifest.headers = NotNull $ headers req,
+              Extism.Manifest.method = NotNull $ method req
+            }
    in let bodyMem = case b of
             Nothing -> return $ Memory 0 0
             Just b -> alloc b

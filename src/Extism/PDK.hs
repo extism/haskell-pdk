@@ -6,8 +6,8 @@ module Extism.PDK
   ( module Extism.PDK,
     ToBytes (..),
     FromBytes (..),
-    JSONValue (..),
-    MsgPackValue (..),
+    JSON (..),
+    MsgPack (..),
   )
 where
 
@@ -16,7 +16,8 @@ import Extism.PDK.Bindings
 import Extism.PDK.Memory
 import qualified Extism.PDK.MsgPack (MsgPack, decode, encode)
 import Extism.PDK.Util
-import Text.JSON (JSON, decode, encode, resultToEither)
+import qualified Text.JSON (decode, encode, resultToEither)
+import qualified Text.JSON.Generic
 
 -- | Get plugin input, returning an error message if the encoding is invalid
 tryInput :: (FromBytes a) => IO (Either String a)
@@ -44,15 +45,9 @@ inputByteString = do
   readInputBytes len
 
 -- | Get input as 'JSON', this is similar to calling `input (JsonValue ...)`
-inputJSON :: (JSON a) => IO (Either String a)
+inputJSON :: (Text.JSON.Generic.Data a) => IO a
 inputJSON = do
-  s <- tryInput :: IO (Either String String)
-  case s of
-    Left e -> return (Left e)
-    Right x ->
-      case resultToEither $ decode x of
-        Left e -> return (Left e)
-        Right y -> return (Right y)
+  Text.JSON.Generic.decodeJSON <$> input
 
 -- | Set plugin output
 output :: (ToBytes a) => a -> IO ()
@@ -61,9 +56,9 @@ output x = do
   extismSetOutput offs len
 
 -- | Set plugin output to a JSON encoded version of the provided value
-outputJSON :: (JSON a) => a -> IO ()
+outputJSON :: (Text.JSON.Generic.Data a) => a -> IO ()
 outputJSON x =
-  output (encode x)
+  output (Text.JSON.Generic.encodeJSON x)
 
 -- | Get a variable from the Extism runtime
 getVar :: (FromBytes a) => String -> IO (Maybe a)
@@ -115,23 +110,39 @@ setError msg = do
   extismSetError $ memoryOffset s
 
 -- | Log level
-data LogLevel = Info | Debug | Warn | Error
+data LogLevel = LogInfo | LogDebug | LogWarn | LogError
 
 -- | Log to configured log file
 log :: LogLevel -> String -> IO ()
-log Info msg = do
+log LogInfo msg = do
   s <- allocString msg
   extismLogInfo (memoryOffset s)
   free s
-log Debug msg = do
+log LogDebug msg = do
   s <- allocString msg
   extismLogDebug (memoryOffset s)
   free s
-log Warn msg = do
+log LogWarn msg = do
   s <- allocString msg
   extismLogWarn (memoryOffset s)
   free s
-log Error msg = do
+log LogError msg = do
   s <- allocString msg
   extismLogError (memoryOffset s)
   free s
+
+-- Log with "error" level
+logError :: String -> IO ()
+logError = Extism.PDK.log LogError
+
+-- Log with "info" level
+logInfo :: String -> IO ()
+logInfo = Extism.PDK.log LogInfo
+
+-- Log with "debug" level
+logDebug :: String -> IO ()
+logDebug = Extism.PDK.log LogDebug
+
+-- Log with "warn" level
+logWarn :: String -> IO ()
+logWarn = Extism.PDK.log LogWarn

@@ -8,7 +8,7 @@ import Extism.PDK.Memory
 getInput = do
   req <- tryInput
   case req of
-    Right (JSONValue x) -> return x
+    Right (JSON x) -> return x
     Left e -> do
       putStrLn e
       url <- inputString

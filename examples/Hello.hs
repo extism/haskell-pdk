@@ -1,7 +1,10 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Hello where
 
 import Data.Maybe
 import Extism.PDK
+import Extism.PDK.JSON
 
 defaultGreeting = "Hello"
 
