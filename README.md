@@ -6,7 +6,7 @@ Docs are available on Hackage: [https://hackage.haskell.org/package/extism-pdk](
 
 ## Install
 
-Make sure you have [wasm32-wasi-ghc](https://gitlab.haskell.org/ghc/ghc-wasm-meta) installed, thn generate an `Executable` project with cabal:
+Make sure you have [wasm32-wasi-ghc](https://gitlab.haskell.org/ghc/ghc-wasm-meta) installed, then generate an `Executable` project with cabal:
 
 ```bash
 cabal init
