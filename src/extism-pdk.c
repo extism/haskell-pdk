@@ -13,6 +13,9 @@ uint64_t extism_input_length() { return _input_length(); }
 DEFINE(length, uint64_t, ExtismPointer)
 uint64_t extism_length(ExtismPointer p) { return _length(p); }
 
+DEFINE(length_unsafe, uint64_t, ExtismPointer)
+uint64_t extism_length_unsafe(ExtismPointer p) { return _length_unsafe(p); }
+
 DEFINE(alloc, ExtismPointer, uint64_t)
 uint64_t extism_alloc(uint64_t n) { return _alloc(n); }
 
