@@ -49,6 +49,8 @@ foreign import ccall "extism_alloc" extismAlloc :: MemoryLength -> IO MemoryOffs
 
 foreign import ccall "extism_length" extismLength :: MemoryOffset -> IO MemoryLength
 
+foreign import ccall "extism_length_unsafe" extismLengthUnsafe :: MemoryOffset -> IO MemoryLength
+
 foreign import ccall "extism_free" extismFree :: MemoryOffset -> IO ()
 
 foreign import ccall "extism_input_length" extismInputLength :: IO InputLength

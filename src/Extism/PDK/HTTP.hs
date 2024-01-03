@@ -119,5 +119,5 @@ sendRequest req b =
             if res == 0
               then return (Response (fromIntegral code) (Memory 0 0))
               else do
-                mem <- findMemory res
-                return (Response (fromIntegral code) mem)
+                len <- extismLengthUnsafe res
+                return (Response (fromIntegral code) (Memory res len))
