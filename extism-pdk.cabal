@@ -46,7 +46,6 @@ library
 
     hs-source-dirs:   src
     default-language: Haskell2010
-    extra-source-files: src/extism-pdk.c
     c-sources: src/extism-pdk.c
 
 executable hello
