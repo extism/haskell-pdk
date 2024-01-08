@@ -6,12 +6,12 @@ module Extism.PDK.HTTP where
 
 import Data.ByteString as B
 import Data.Word
-import Extism.JSON (JSValue, Nullable (..), Result (..))
+import Extism.JSON (Nullable (..))
 import qualified Extism.Manifest (HTTPRequest (..))
 import Extism.PDK
 import Extism.PDK.Bindings
 import Extism.PDK.Memory
-import Text.JSON (decode, encode, makeObj)
+import Text.JSON (Result(..), decode, encode, makeObj)
 import qualified Text.JSON.Generic
 
 -- | HTTP Request
@@ -64,11 +64,11 @@ responseJSON :: (Text.JSON.Generic.Data a) => Response -> IO (Either String a)
 responseJSON (Response _ mem) = do
   json <- decode <$> loadString mem
   case json of
-    Extism.JSON.Ok json ->
+    Ok json ->
       case Text.JSON.Generic.fromJSON json of
-        Extism.JSON.Ok x -> return $ Right x
-        Extism.JSON.Error msg -> return (Left msg)
-    Extism.JSON.Error msg -> return (Left msg)
+        Ok x -> return $ Right x
+        Error msg -> return (Left msg)
+    Error msg -> return (Left msg)
 
 -- | Get the 'Response' body and decode it
 response :: (FromBytes a) => Response -> IO (Either String a)
