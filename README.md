@@ -31,24 +31,28 @@ The goal of writing an [Extism plug-in](https://extism.org/docs/concepts/plug-in
 
 
 ```haskell
-module Example where
+{-# LANGUAGE DeriveDataTypeable #-}
 
+module Hello where
+
+import Data.Maybe
 import Extism.PDK
+import Extism.PDK.JSON
 
-makeGreeting g n =
+defaultGreeting = "Hello"
+
+greet g n =
   output $ g ++ ", " ++ n
 
-greet = do
+testing = do
   -- Get a name from the Extism runtime
   name <- inputString
   -- Get  configured greeting
   greeting <- getConfig "greeting"
   -- Greet the user, if no greeting is configured then "Hello" is used
-  makeGreeting (fromMaybe defaultGreeting greeting) name
-  -- Return code
-  return 0
+  greet (fromMaybe defaultGreeting greeting) name
 
-foreign export ccall "greet" greet:: IO Int32
+foreign export ccall "greet" testing :: IO ()
 ```
 
 This example also shows how to use the `getConfig` function to load runtime configuration values set by the host.
