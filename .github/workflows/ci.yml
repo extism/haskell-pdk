@@ -17,7 +17,7 @@ jobs:
         run: |
           git clone https://gitlab.haskell.org/ghc/ghc-wasm-meta
           pushd ghc-wasm-meta
-          ./setup.sh
+          FLAVOUR=9.8 ./setup.sh
       
       - name: Build examples
         run: |
