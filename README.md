@@ -27,8 +27,7 @@ ghc-options:
 
 ## Getting Started
 
-The goal of writing an [Extism plug-in](https://extism.org/docs/concepts/plug-in) is to compile your Haskell code to a Wasm module with exported functions that the host application can invoke. The first thing you should understand is creating an export. Let's write a simple program that exports a `greet` function which will take a name as a string and return a greeting string. For this, we use the `#[plugin_fn]` macro on our exported function:
-
+The goal of writing an [Extism plug-in](https://extism.org/docs/concepts/plug-in) is to compile your Haskell code to a Wasm module with exported functions that the host application can invoke. The first thing you should understand is creating an export. Let's write a simple program that exports a `greet` function which will take a name as a string and return a greeting string. 
 
 ```haskell
 {-# LANGUAGE DeriveDataTypeable #-}
