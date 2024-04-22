@@ -78,35 +78,28 @@ bsToWord64 (BS fp len) =
   if len /= 8
     then error "invalid bytestring"
     else
-      withForeignPtr
-        fp
-        ( peek . castPtr @Word8 @Word64
-        )
+      withForeignPtr fp $ peek . castPtr @Word8 @Word64
 
 word64ToBS :: Word64 -> ByteString
 word64ToBS word =
-  unsafeCreate
-    8
-    ( \p ->
-        poke (castPtr @Word8 @Word64 p) word
-    )
+  unsafeCreate 8 $ \p ->
+    poke (castPtr @Word8 @Word64 p) word
 
 readLoop :: (Word64 -> IO Word8) -> (Word64 -> IO Word64) -> Word64 -> Word64 -> [ByteString] -> IO ByteString
 readLoop f1 f8 total index acc =
   if index >= total
     then return $ B.concat . Prelude.reverse $ acc
-    else
+    else do
       let diff = total - index
-       in do
-            (n, x) <-
-              if diff >= 8
-                then do
-                  u <- f8 index
-                  return (8, word64ToBS u)
-                else do
-                  b <- f1 index
-                  return (1, B.singleton b)
-            readLoop f1 f8 total (index + n) (x : acc)
+      (n, x) <-
+        if diff >= 8
+          then do
+            u <- f8 index
+            return (8, word64ToBS u)
+          else do
+            b <- f1 index
+            return (1, B.singleton b)
+      readLoop f1 f8 total (index + n) (x : acc)
 
 readInputBytes :: InputLength -> IO ByteString
 readInputBytes len =
@@ -119,22 +112,21 @@ readBytes offs len =
 writeBytesLoop :: MemoryOffset -> MemoryOffset -> ByteString -> IO ()
 writeBytesLoop index total src =
   if index >= total
-    then return ()
-    else
+    then pure ()
+    else do
       let diff = total - index
-       in do
-            (n, sub) <-
-              if diff >= 8
-                then do
-                  let (curr, next) = B.splitAt 8 src
-                  u <- bsToWord64 curr
-                  extismStoreU64 index u
-                  return (8, next)
-                else do
-                  let u = B.head src
-                  extismStoreU8 index u
-                  return (1, B.tail src)
-            writeBytesLoop (index + n) total sub
+      (n, sub) <-
+        if diff >= 8
+          then do
+            let (curr, next) = B.splitAt 8 src
+            u <- bsToWord64 curr
+            extismStoreU64 index u
+            return (8, next)
+          else do
+            let u = B.head src
+            extismStoreU8 index u
+            return (1, B.tail src)
+      writeBytesLoop (index + n) total sub
 
 writeBytes :: MemoryOffset -> MemoryLength -> ByteString -> IO ()
 writeBytes offs len =
