@@ -5,11 +5,7 @@ module CountVowels where
 import Extism.PDK
 import Extism.PDK.JSON
 
-data Output = Output
-  { count :: Int
-  }
-  deriving
-    (Data, Typeable)
+data Output = Output {count :: Int} deriving (Data)
 
 isVowel c =
   c == 'a'

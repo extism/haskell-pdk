@@ -149,13 +149,9 @@ import Extism.PDK.JSON
 data Add = Add
   { a :: Int,
     b :: Int
-  }
-  deriving (Typeable, Data)
+  } deriving (Data)
 
-data Sum = Sum
-  { sum :: Int
-  }
-  deriving (Typeable, Data)
+data Sum = Sum { sum :: Int } deriving (Data)
 
 add = do
   value <- input
