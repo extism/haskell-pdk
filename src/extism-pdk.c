@@ -70,6 +70,6 @@ void extism_log_info(ExtismPointer p) { return _log_info(p); }
 DEFINE(log_debug, void, ExtismPointer)
 void extism_log_debug(ExtismPointer p) { return _log_debug(p); }
 DEFINE(log_warn, void, ExtismPointer)
-void extism_warn_info(ExtismPointer p) { return _log_warn(p); }
+void extism_log_warn(ExtismPointer p) { return _log_warn(p); }
 DEFINE(log_error, void, ExtismPointer)
 void extism_log_error(ExtismPointer p) { return _log_error(p); }
