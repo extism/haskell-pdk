@@ -71,7 +71,6 @@ getVar key = do
     else do
       mem <- findMemory v
       bs <- load mem
-      free k
       case bs of
         Left _ -> return Nothing
         Right x -> return (Just x)
@@ -86,8 +85,6 @@ setVar key (Just v) = do
   k <- allocString key
   x <- alloc v
   extismSetVar (memoryOffset k) (memoryOffset x)
-  free k
-  free x
 
 -- | Get a configuration value
 getConfig :: String -> IO (Maybe String)
