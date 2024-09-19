@@ -65,7 +65,6 @@ getVar :: (FromBytes a) => String -> IO (Maybe a)
 getVar key = do
   k <- allocString key
   v <- extismGetVar (memoryOffset k)
-  free k
   if v == 0
     then return Nothing
     else do
@@ -80,7 +79,6 @@ setVar :: (ToBytes a) => String -> Maybe a -> IO ()
 setVar key Nothing = do
   k <- allocString key
   extismSetVar (memoryOffset k) 0
-  free k
 setVar key (Just v) = do
   k <- allocString key
   x <- alloc v
@@ -91,7 +89,6 @@ getConfig :: String -> IO (Maybe String)
 getConfig key = do
   k <- allocString key
   v <- extismGetConfig (memoryOffset k)
-  free k
   if v == 0
     then return Nothing
     else do
@@ -114,19 +111,15 @@ log :: LogLevel -> String -> IO ()
 log LogInfo msg = do
   s <- allocString msg
   extismLogInfo (memoryOffset s)
-  free s
 log LogDebug msg = do
   s <- allocString msg
   extismLogDebug (memoryOffset s)
-  free s
 log LogWarn msg = do
   s <- allocString msg
   extismLogWarn (memoryOffset s)
-  free s
 log LogError msg = do
   s <- allocString msg
   extismLogError (memoryOffset s)
-  free s
 
 -- Log with "error" level
 logError :: String -> IO ()

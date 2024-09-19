@@ -20,7 +20,7 @@ httpGet = do
   -- Send the request, get a 'Response'
   res <- sendRequest req (Nothing :: Maybe String)
   -- Save response body to memory
-  outputMemory (memory res)
+  output (responseString res)
   -- Return code
   return 0
 

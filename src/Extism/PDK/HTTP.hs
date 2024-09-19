@@ -11,7 +11,8 @@ import qualified Extism.Manifest (HTTPRequest (..))
 import Extism.PDK
 import Extism.PDK.Bindings
 import Extism.PDK.Memory
-import Text.JSON (Result(..), decode, encode, makeObj)
+import Extism.PDK.Util (fromByteString)
+import Text.JSON (Result (..), decode, encode, makeObj)
 import qualified Text.JSON.Generic
 
 -- | HTTP Request
@@ -25,7 +26,7 @@ data Request = Request
 -- | HTTP Response
 data Response = Response
   { statusCode :: Int,
-    memory :: Memory
+    responseData :: ByteString
   }
 
 -- | Creates a new 'Request'
@@ -43,36 +44,30 @@ withHeaders :: [(String, String)] -> Request -> Request
 withHeaders h req =
   req {headers = h}
 
--- | Access the Memory block associated with a 'Response'
-responseMemory :: Response -> Memory
-responseMemory (Response _ mem) = mem
-
 -- | Get the 'Response' body as a 'ByteString'
-responseByteString :: Response -> IO ByteString
-responseByteString (Response _ mem) = do
-  a <- load mem
-  case a of
-    Left e -> error e
-    Right x -> return x
+responseByteString :: Response -> ByteString
+responseByteString (Response _ mem) = mem
 
 -- | Get the 'Response' body as a 'String'
-responseString :: Response -> IO String
-responseString (Response _ mem) = loadString mem
+responseString :: Response -> String
+responseString (Response _ mem) = fromByteString mem
 
 -- | Get the 'Response' body as JSON
 responseJSON :: (Text.JSON.Generic.Data a) => Response -> IO (Either String a)
-responseJSON (Response _ mem) = do
-  json <- decode <$> loadString mem
+responseJSON res = do
   case json of
     Ok json ->
       case Text.JSON.Generic.fromJSON json of
         Ok x -> return $ Right x
         Error msg -> return (Left msg)
     Error msg -> return (Left msg)
+  where
+    s = responseString res
+    json = decode s
 
 -- | Get the 'Response' body and decode it
-response :: (FromBytes a) => Response -> IO (Either String a)
-response (Response _ mem) = load mem
+response :: (FromBytes a) => Response -> Either String a
+response (Response _ mem) = fromBytes mem
 
 -- | Send HTTP request with an optional request body
 sendRequestWithBody :: (ToBytes a) => Request -> a -> IO Response
@@ -87,14 +82,14 @@ sendRequestWithBody req b = do
             }
   j <- allocString json
   res <- extismHTTPRequest (memoryOffset j) (memoryOffset body)
-  free j
-  free body
   code <- extismHTTPStatusCode
   if res == 0
-    then return (Response (fromIntegral code) (Memory 0 0))
+    then return (Response (fromIntegral code) empty)
     else do
       mem <- findMemory res
-      return (Response (fromIntegral code) mem)
+      bs <- loadByteString mem
+      free mem
+      return (Response (fromIntegral code) bs)
 
 -- | Send HTTP request with an optional request body
 sendRequest :: (ToBytes a) => Request -> Maybe a -> IO Response
@@ -113,11 +108,12 @@ sendRequest req b =
             body <- bodyMem
             j <- allocString json
             res <- extismHTTPRequest (memoryOffset j) (memoryOffset body)
-            free j
-            free body
             code <- extismHTTPStatusCode
             if res == 0
-              then return (Response (fromIntegral code) (Memory 0 0))
+              then return (Response (fromIntegral code) empty)
               else do
                 len <- extismLengthUnsafe res
-                return (Response (fromIntegral code) (Memory res len))
+                let mem = Memory res len
+                bs <- loadByteString mem
+                free mem
+                return (Response (fromIntegral code) bs)
