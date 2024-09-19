@@ -1,5 +1,9 @@
 # Revision history for extism-pdk
 
+## 1.1.0.0
+
+* Remove calls to free where Extism host expects to take ownership
+
 ## 1.0.0.0
 
 * Extism 1.0 compatible release
