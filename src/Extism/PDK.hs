@@ -27,8 +27,7 @@ tryInput = fromBytes <$> inputByteString
 input :: forall a. (FromBytes a) => IO a
 input = do
   i <- inputByteString
-  let x = fromBytes i
-  case x of
+  case fromBytes i of
     Left e -> error e
     Right y -> return y
 

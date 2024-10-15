@@ -49,8 +49,7 @@ load (Memory offs len) = do
 -- | Store data into a 'Memory' block
 store :: (ToBytes a) => Memory -> a -> IO ()
 store (Memory offs len) a =
-  let bs = toBytes a
-   in writeBytes offs len bs
+  writeBytes offs len $ toBytes a
 
 -- | Set plugin output to the provided 'Memory' block
 outputMemory :: Memory -> IO ()
@@ -70,8 +69,7 @@ loadString (Memory offs len) =
 -- | Store string in 'Memory' block
 storeString :: Memory -> String -> IO ()
 storeString mem s =
-  let bs = toByteString s
-   in storeByteString mem bs
+  storeByteString mem $ toByteString s
 
 -- | Store byte string in 'Memory' block
 storeByteString :: Memory -> B.ByteString -> IO ()
@@ -80,20 +78,20 @@ storeByteString (Memory offs len) =
 
 -- | Encode a value and copy it into Extism memory, returning the Memory block
 alloc :: (ToBytes a) => a -> IO Memory
-alloc x =
-  let bs = toBytes x
-   in do
-        Memory offs len <- memAlloc (B.length bs)
-        writeBytes offs len bs
-        return $ Memory offs len
+alloc x = do
+  Memory offs len <- memAlloc (B.length bs)
+  writeBytes offs len bs
+  return $ Memory offs len
+  where
+    bs = toBytes x
 
 -- | Allocate a new 'Memory' block
 memAlloc :: Int -> IO Memory
-memAlloc n =
-  let len = fromIntegral n
-   in do
-        offs <- extismAlloc len
-        return $ Memory offs len
+memAlloc n = do
+  offs <- extismAlloc len
+  return $ Memory offs len
+  where
+    len = fromIntegral n
 
 -- | Free a 'Memory' block
 free :: Memory -> IO ()
@@ -149,39 +147,36 @@ instance ToBytes B.ByteString where
 
 instance FromBytes String where
   fromBytes mem =
-    let s = fromBytes mem
-     in case s of
-          Left e -> Left e
-          Right x -> Right $ fromByteString x
+    case fromBytes mem of
+      Left e -> Left e
+      Right x -> Right $ fromByteString x
 
 instance ToBytes String where
   toBytes = toByteString
 
 instance (Text.JSON.Generic.Data a) => FromBytes (JSON a) where
   fromBytes mem =
-    let a = fromBytes mem
-     in case a of
-          Left e -> Left e
-          Right x ->
-            case Text.JSON.decode x of
+    case fromBytes mem of
+      Left e -> Left e
+      Right x ->
+        case Text.JSON.decode x of
+          Text.JSON.Error e -> Left e
+          Text.JSON.Ok y ->
+            case Text.JSON.Generic.fromJSON y of
               Text.JSON.Error e -> Left e
-              Text.JSON.Ok y ->
-                case Text.JSON.Generic.fromJSON y of
-                  Text.JSON.Error e -> Left e
-                  Text.JSON.Ok z -> Right (JSON z)
+              Text.JSON.Ok z -> Right (JSON z)
 
 instance (Text.JSON.Generic.Data a) => ToBytes (JSON a) where
   toBytes (JSON x) = toBytes (Text.JSON.Generic.encodeJSON x)
 
 instance (Extism.PDK.MsgPack.MsgPack a) => FromBytes (MsgPack a) where
   fromBytes mem =
-    let a = fromBytes mem
-     in case a of
+    case fromBytes mem of
+      Left e -> Left e
+      Right x ->
+        case Extism.PDK.MsgPack.decode x of
           Left e -> Left e
-          Right x ->
-            case Extism.PDK.MsgPack.decode x of
-              Left e -> Left e
-              Right y -> Right (MsgPack y)
+          Right y -> Right (MsgPack y)
 
 instance (Extism.PDK.MsgPack.MsgPack a) => ToBytes (MsgPack a) where
   toBytes (MsgPack x) = toBytes $ Extism.PDK.MsgPack.encode x
@@ -191,75 +186,69 @@ instance ToBytes Int32 where
 
 instance FromBytes Int32 where
   fromBytes mem =
-    let bs = fromBytes mem
-     in case bs of
-          Left e -> Left e
-          Right x ->
-            case runGetOrFail getInt32le (B.fromStrict x) of
-              Left (_, _, e) -> Left e
-              Right (_, _, x) -> Right x
+    case fromBytes mem of
+      Left e -> Left e
+      Right x ->
+        case runGetOrFail getInt32le (B.fromStrict x) of
+          Left (_, _, e) -> Left e
+          Right (_, _, x) -> Right x
 
 instance ToBytes Int64 where
   toBytes i = toBytes $ B.toStrict (runPut (putInt64le i))
 
 instance FromBytes Int64 where
   fromBytes mem =
-    let bs = fromBytes mem
-     in case bs of
-          Left e -> Left e
-          Right x ->
-            case runGetOrFail getInt64le (B.fromStrict x) of
-              Left (_, _, e) -> Left e
-              Right (_, _, x) -> Right x
+    case fromBytes mem of
+      Left e -> Left e
+      Right x ->
+        case runGetOrFail getInt64le (B.fromStrict x) of
+          Left (_, _, e) -> Left e
+          Right (_, _, x) -> Right x
 
 instance ToBytes Word32 where
   toBytes i = toBytes $ B.toStrict (runPut (putWord32le i))
 
 instance FromBytes Word32 where
   fromBytes mem =
-    let bs = fromBytes mem
-     in case bs of
-          Left e -> Left e
-          Right x ->
-            case runGetOrFail getWord32le (B.fromStrict x) of
-              Left (_, _, e) -> Left e
-              Right (_, _, x) -> Right x
+    case fromBytes mem of
+      Left e -> Left e
+      Right x ->
+        case runGetOrFail getWord32le (B.fromStrict x) of
+          Left (_, _, e) -> Left e
+          Right (_, _, x) -> Right x
 
 instance ToBytes Word64 where
   toBytes i = toBytes $ B.toStrict (runPut (putWord64le i))
 
 instance FromBytes Word64 where
   fromBytes mem =
-    let bs = fromBytes mem
-     in case bs of
-          Left e -> Left e
-          Right x ->
-            case runGetOrFail getWord64le (B.fromStrict x) of
-              Left (_, _, e) -> Left e
-              Right (_, _, x) -> Right x
+    case fromBytes mem of
+      Left e -> Left e
+      Right x ->
+        case runGetOrFail getWord64le (B.fromStrict x) of
+          Left (_, _, e) -> Left e
+          Right (_, _, x) -> Right x
 
 instance ToBytes Float where
   toBytes i = toBytes $ B.toStrict (runPut (putFloatle i))
 
 instance FromBytes Float where
   fromBytes mem =
-    let bs = fromBytes mem
-     in case bs of
-          Left e -> Left e
-          Right x ->
-            case runGetOrFail getFloatle (B.fromStrict x) of
-              Left (_, _, e) -> Left e
-              Right (_, _, x) -> Right x
+    case fromBytes mem of
+      Left e -> Left e
+      Right x ->
+        case runGetOrFail getFloatle (B.fromStrict x) of
+          Left (_, _, e) -> Left e
+          Right (_, _, x) -> Right x
 
 instance ToBytes Double where
   toBytes i = toBytes $ B.toStrict (runPut (putDoublele i))
 
 instance FromBytes Double where
   fromBytes mem =
-    let bs = fromBytes mem
-     in case bs of
-          Left e -> Left e
-          Right x ->
-            case runGetOrFail getDoublele (B.fromStrict x) of
-              Left (_, _, e) -> Left e
-              Right (_, _, x) -> Right x
+    case fromBytes mem of
+      Left e -> Left e
+      Right x ->
+        case runGetOrFail getDoublele (B.fromStrict x) of
+          Left (_, _, e) -> Left e
+          Right (_, _, x) -> Right x

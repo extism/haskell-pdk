@@ -69,6 +69,8 @@ foreign import ccall "extism_http_request" extismHTTPRequest :: MemoryOffset -> 
 
 foreign import ccall "extism_http_status_code" extismHTTPStatusCode :: IO Int32
 
+foreign import ccall "extism_http_headers" extismHTTPHeaders :: IO MemoryOffset
+
 foreign import ccall "__wasm_call_ctors" wasmConstructor :: IO ()
 
 foreign import ccall "__wasm_call_dtors" wasmDestructor :: IO ()
@@ -90,9 +92,8 @@ readLoop f1 f8 total index acc =
   if index >= total
     then return $ B.concat . Prelude.reverse $ acc
     else do
-      let diff = total - index
       (n, x) <-
-        if diff >= 8
+        if total - index >= 8
           then do
             u <- f8 index
             return (8, word64ToBS u)
@@ -114,9 +115,8 @@ writeBytesLoop index total src =
   if index >= total
     then pure ()
     else do
-      let diff = total - index
       (n, sub) <-
-        if diff >= 8
+        if total - index >= 8
           then do
             let (curr, next) = B.splitAt 8 src
             u <- bsToWord64 curr

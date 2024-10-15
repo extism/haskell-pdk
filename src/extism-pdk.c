@@ -65,6 +65,9 @@ ExtismPointer extism_http_request(ExtismPointer req, ExtismPointer body) {
 DEFINE(http_status_code, int32_t)
 int32_t extism_http_status_code() { return _http_status_code(); }
 
+DEFINE(http_headers, ExtismPointer)
+ExtismPointer extism_http_headers() { return _http_headers(); }
+
 DEFINE(log_info, void, ExtismPointer)
 void extism_log_info(ExtismPointer p) { return _log_info(p); }
 DEFINE(log_debug, void, ExtismPointer)
