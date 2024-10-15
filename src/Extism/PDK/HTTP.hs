@@ -108,28 +108,28 @@ sendRequestWithBody req b = do
 
 -- | Send HTTP request with an optional request body
 sendRequest :: (ToBytes a) => Request -> Maybe a -> IO Response
-sendRequest req b =
-  let json =
-        encode
-          Extism.Manifest.HTTPRequest
-            { Extism.Manifest.url = url req,
-              Extism.Manifest.headers = NotNull $ headers req,
-              Extism.Manifest.method = NotNull $ method req
-            }
-   in let bodyMem = case b of
-            Nothing -> return $ Memory 0 0
-            Just b -> alloc b
-       in do
-            body <- bodyMem
-            j <- allocString json
-            res <- extismHTTPRequest (memoryOffset j) (memoryOffset body)
-            code <- extismHTTPStatusCode
-            h <- getHeaders
-            if res == 0
-              then return (Response (fromIntegral code) empty h)
-              else do
-                len <- extismLengthUnsafe res
-                let mem = Memory res len
-                bs <- loadByteString mem
-                free mem
-                return (Response (fromIntegral code) bs h)
+sendRequest req b = do
+  body <- bodyMem
+  j <- allocString json
+  res <- extismHTTPRequest (memoryOffset j) (memoryOffset body)
+  code <- extismHTTPStatusCode
+  h <- getHeaders
+  if res == 0
+    then return (Response (fromIntegral code) empty h)
+    else do
+      len <- extismLengthUnsafe res
+      let mem = Memory res len
+      bs <- loadByteString mem
+      free mem
+      return (Response (fromIntegral code) bs h)
+  where
+    json =
+      encode
+        Extism.Manifest.HTTPRequest
+          { Extism.Manifest.url = url req,
+            Extism.Manifest.headers = NotNull $ headers req,
+            Extism.Manifest.method = NotNull $ method req
+          }
+    bodyMem = case b of
+      Nothing -> return $ Memory 0 0
+      Just b -> alloc b
