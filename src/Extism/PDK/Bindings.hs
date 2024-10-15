@@ -69,6 +69,8 @@ foreign import ccall "extism_http_request" extismHTTPRequest :: MemoryOffset -> 
 
 foreign import ccall "extism_http_status_code" extismHTTPStatusCode :: IO Int32
 
+foreign import ccall "extism_http_headers" extismHTTPHeaders :: IO MemoryOffset
+
 foreign import ccall "__wasm_call_ctors" wasmConstructor :: IO ()
 
 foreign import ccall "__wasm_call_dtors" wasmDestructor :: IO ()
