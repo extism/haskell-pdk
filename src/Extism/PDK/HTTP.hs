@@ -81,7 +81,7 @@ getHeaders = do
       () <- Extism.PDK.Memory.free mem
       case h of
         Left _ -> return []
-        Right x -> return x
+        Right (JSON x) -> return x
 
 -- | Send HTTP request with an optional request body
 sendRequestWithBody :: (ToBytes a) => Request -> a -> IO Response
