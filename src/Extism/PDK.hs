@@ -109,7 +109,7 @@ data LogLevel = LogTrace | LogDebug | LogInfo | LogWarn | LogError deriving (Enu
 log :: LogLevel -> String -> IO ()
 log level msg = do
   configuredLevel <- extismGetLogLevel
-  if configuredLevel < fromIntegral (fromEnum level)
+  if fromIntegral (fromEnum level) < configuredLevel
     then return ()
     else do
       s <- allocString msg
