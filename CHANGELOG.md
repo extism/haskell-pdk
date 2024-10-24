@@ -1,5 +1,10 @@
 # Revision history for extism-pdk
 
+## 1.2.0.0
+
+* Add bindings to `http_headers` Extism host funtion
+* Add `trace` level logging
+
 ## 1.1.0.0
 
 * Remove calls to free where Extism host expects to take ownership
