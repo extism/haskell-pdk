@@ -37,6 +37,10 @@ foreign import ccall "extism_log_debug" extismLogDebug :: MemoryOffset -> IO ()
 
 foreign import ccall "extism_log_error" extismLogError :: MemoryOffset -> IO ()
 
+foreign import ccall "extism_log_trace" extismLogTrace :: MemoryOffset -> IO ()
+
+foreign import ccall "extism_get_log_level" extismGetLogLevel :: IO Int32
+
 foreign import ccall "extism_store_u8" extismStoreU8 :: MemoryOffset -> Word8 -> IO ()
 
 foreign import ccall "extism_store_u64" extismStoreU64 :: MemoryOffset -> Word64 -> IO ()

@@ -22,6 +22,10 @@ isVowel c =
 countVowels = do
   -- Get input string from Extism host
   s <- input
+
+  -- Log input
+  () <- Extism.PDK.log LogInfo ("Got input: " ++ s)
+
   -- Calculate the number of vowels
   let count = length (filter isVowel s)
   -- Return a JSON object {"count": count} back to the host

@@ -76,3 +76,7 @@ DEFINE(log_warn, void, ExtismPointer)
 void extism_log_warn(ExtismPointer p) { return _log_warn(p); }
 DEFINE(log_error, void, ExtismPointer)
 void extism_log_error(ExtismPointer p) { return _log_error(p); }
+DEFINE(log_trace, void, ExtismPointer)
+void extism_log_trace(ExtismPointer p) { return _log_trace(p); }
+DEFINE(get_log_level, int32_t)
+int32_t extism_get_log_level() { return _get_log_level(); }
