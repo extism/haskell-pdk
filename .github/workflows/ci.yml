@@ -12,10 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/libextism
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
       
-      - name: Install wasm32-wasi-ghc
+      - name: Install wasm32-wasi-ghc (7a752b58)
         run: |
           git clone https://gitlab.haskell.org/ghc/ghc-wasm-meta
+          git checkout 7a752b58
           pushd ghc-wasm-meta
           FLAVOUR=9.8 ./setup.sh
       
@@ -34,3 +38,21 @@ jobs:
 
           TEST=$(extism call ./http_get.wasm http_get --wasi --input "https://jsonplaceholder.typicode.com/todos/1" --allow-host '*.typicode.com')
           echo $TEST | grep '"userId": 1'
+
+      - name: Install wasm32-wasi-ghc (main)
+        run: |
+          git checkout main
+          FLAVOUR=9.8 ./setup.sh
+
+      - name: Build examples with tail-call support
+        run: |
+          source ~/.ghc-wasm/env
+          make
+
+      - name: Test with tail-call support
+        run: |
+          pushd test-host
+          TEST=$(cargo run --release ../count_vowels.wasm count_vowels "this is a test")
+          echo $TEST | grep '"count":4'
+          TEST=$(cargo run ../hello.wasm testing "Name")
+          echo $TEST | grep 'Hi there, Name'
