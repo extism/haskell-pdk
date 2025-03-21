@@ -44,6 +44,7 @@ jobs:
       - name: Build examples
         run: |
           source ~/.ghc-wasm/env
+          make clean
           make
 
       - name: Test call command
