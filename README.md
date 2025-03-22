@@ -225,8 +225,8 @@ httpGet = do
   JSON req <- input
   -- Send the request, get a 'Response'
   res <- sendRequest req (Nothing :: Maybe String)
-  -- Save response body to memory
-  outputMemory (memory res)
+  -- Save response body to output
+  output $ responseData res
   -- Return code
   return 0
 
@@ -248,6 +248,8 @@ to do this correctly. So we recommend reading out [concept doc on Host Functions
 Host functions in the Haskell PDK require C stubs to import a function from a particular namespace:
 
 ```c
+#include <stdint.h>
+
 #define IMPORT(a, b) __attribute__((import_module(a), import_name(b)))
 IMPORT("extism:host/user", "a_python_func")
 uint64_t a_python_func_impl(uint64_t input);
@@ -270,8 +272,9 @@ foreign import ccall "a_python_func" aPythonFunc :: Word64 -> IO Word64
 helloFromPython :: String -> IO String
 helloFromPython = do
   s' <- allocString "Hello!"
-  res <- aPythonFunc (memoryOffset s')
-  logInfo <$> loadString res
+  resOffset <- aPythonFunc (memoryOffset s')
+  resMem <- findMemory resOffset
+  logInfo =<< loadString resMem
   return 0
 
 foreign export ccall "helloFromPython" helloFromPython :: IO Int32
