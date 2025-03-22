@@ -35,21 +35,19 @@ jobs:
           TEST=$(cargo run ../hello.wasm testing "Name")
           echo $TEST | grep 'Hi there, Name'
       
-      - name: Install wasm32-wasi-ghc (7a752b58)
+      - name: Install wasm32-wasi-ghc with no tail-call support
         run: |
-          rm -rf ghc-wasm-meta ~/.ghc-wasm *.wasm
-          git clone https://gitlab.haskell.org/ghc/ghc-wasm-meta
           pushd ghc-wasm-meta
-          git reset --hard 7a752b58
+          git checkout ada3b8fa0f763e4dccb2b1f6bbf2518bff2a7c6e
           FLAVOUR=9.12 ./setup.sh
       
-      - name: Build examples
+      - name: Build examples with no tail-call support
         run: |
           source ~/.ghc-wasm/env
           make clean
           make
 
-      - name: Test call command
+      - name: Test call command with no tail-call support
         run: |
           TEST=$(extism call ./count_vowels.wasm count_vowels --wasi --input "this is a test")
           echo $TEST | grep '"count":4'

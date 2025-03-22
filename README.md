@@ -14,8 +14,8 @@ cabal init
 
 **Note**: As of [aa2d85dc](https://gitlab.haskell.org/haskell-wasm/ghc-wasm-meta/-/commit/aa2d85dccbce5e18a9ce31ac92511dcdd9a95b6c) the Wasm tail-call
 proposal is enabled by default. Some Wasm runtimes, like the go-sdk, don't support this yet so it might be necesarry to pin ghc-wasm-meta to
-[7a752b58](https://gitlab.haskell.org/haskell-wasm/ghc-wasm-meta/-/commit/7a752b582203378358ffc2224d37346ec57724a0), which is the first commit before
-tail-calls were enabled.
+[ada3b8fa](https://gitlab.haskell.org/haskell-wasm/ghc-wasm-meta/-/commit/ada3b8fa0f763e4dccb2b1f6bbf2518bff2a7c6e), which seems to be the last commit to not
+require tail-calls.
 
 Add the library from [Hackage](https://hackage.haskell.org/package/extism-pdk) to your cabal file:
 
