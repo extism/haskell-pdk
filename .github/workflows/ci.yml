@@ -20,7 +20,7 @@ jobs:
         run: |
           git clone https://gitlab.haskell.org/ghc/ghc-wasm-meta
           pushd ghc-wasm-meta
-          FLAVOUR=9.8 ./setup.sh
+          FLAVOUR=9.12 ./setup.sh
 
       - name: Build examples with tail-call support
         run: |
@@ -37,9 +37,11 @@ jobs:
       
       - name: Install wasm32-wasi-ghc (7a752b58)
         run: |
+          rm -rf ghc-wasm-meta
+          git clone https://gitlab.haskell.org/ghc/ghc-wasm-meta
           pushd ghc-wasm-meta
           git reset --hard 7a752b58
-          FLAVOUR=9.8 ./setup.sh
+          FLAVOUR=9.12 ./setup.sh
       
       - name: Build examples
         run: |
